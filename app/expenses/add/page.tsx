@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import {
   IndianRupee,
@@ -24,16 +23,19 @@ import {
   Check,
 } from "lucide-react"
 import Link from "next/link"
+import { AdvancedSplit } from "@/components/advanced-split"
+import { SplitPreview } from "@/components/split-preview"
+import { CreateDispute } from "@/components/create-dispute"
 
 export default function AddExpensePage() {
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("food")
   const [selectedGroup, setSelectedGroup] = useState("flatmates")
-  const [splitType, setSplitType] = useState("equal")
   const [paidBy, setPaidBy] = useState("you")
   const [generateUpiLink, setGenerateUpiLink] = useState(true)
-  const [customSplits, setCustomSplits] = useState<{ [key: string]: number }>({})
+  const [finalSplits, setFinalSplits] = useState<{ [key: string]: number }>({})
+  const [disputes, setDisputes] = useState<any[]>([])
 
   const categories = [
     { id: "food", name: "Food & Dining", icon: <Utensils className="w-5 h-5" />, color: "bg-orange-500" },
@@ -56,14 +58,14 @@ export default function AddExpensePage() {
   const equalSplit = amount ? (Number.parseFloat(amount) / memberCount).toFixed(2) : "0"
 
   const handleCustomSplitChange = (member: string, value: string) => {
-    setCustomSplits((prev) => ({
-      ...prev,
-      [member]: Number.parseFloat(value) || 0,
-    }))
+    // setCustomSplits((prev) => ({
+    //   ...prev,
+    //   [member]: Number.parseFloat(value) || 0,
+    // }))
   }
 
-  const totalCustomSplit = Object.values(customSplits).reduce((sum, val) => sum + val, 0)
-  const remainingAmount = amount ? Number.parseFloat(amount) - totalCustomSplit : 0
+  // const totalCustomSplit = Object.values(customSplits).reduce((sum, val) => sum + val, 0)
+  // const remainingAmount = amount ? Number.parseFloat(amount) - totalCustomSplit : 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-teal-50">
@@ -220,103 +222,72 @@ export default function AddExpensePage() {
             </CardContent>
           </Card>
 
-          {/* Split Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Split Options</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={splitType} onValueChange={setSplitType}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="equal">Equal</TabsTrigger>
-                  <TabsTrigger value="percentage">Percentage</TabsTrigger>
-                  <TabsTrigger value="custom">Custom</TabsTrigger>
-                </TabsList>
+          {/* Advanced Split Options */}
+          <AdvancedSplit
+            totalAmount={Number.parseFloat(amount) || 0}
+            members={
+              selectedGroupData?.members.map((member, index) => ({
+                id: member.toLowerCase().replace(" ", ""),
+                name: member,
+                avatar: "",
+                isIncluded: true,
+              })) || []
+            }
+            onSplitChange={(splits) => {
+              setFinalSplits(splits)
+            }}
+            groupId={selectedGroup}
+          />
 
-                <TabsContent value="equal" className="mt-4">
-                  <div className="space-y-3">
-                    <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
-                      <p className="text-sm text-teal-700 mb-2">Equal Split</p>
-                      <p className="text-lg font-bold text-teal-800">₹{equalSplit} per person</p>
-                    </div>
-                    {selectedGroupData?.members.map((member) => (
-                      <div key={member} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-gradient-to-r from-orange-400 to-pink-400 text-white">
-                              {member === "You" ? "Y" : member.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{member}</span>
-                        </div>
-                        <span className="font-bold">₹{equalSplit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="percentage" className="mt-4">
-                  <div className="space-y-3">
-                    {selectedGroupData?.members.map((member) => (
-                      <div key={member} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-gradient-to-r from-orange-400 to-pink-400 text-white">
-                              {member === "You" ? "Y" : member.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{member}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Input type="number" placeholder="25" className="w-16 text-center" />
-                          <span className="text-sm text-gray-500">%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="custom" className="mt-4">
-                  <div className="space-y-3">
-                    {selectedGroupData?.members.map((member) => (
-                      <div key={member} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-gradient-to-r from-orange-400 to-pink-400 text-white">
-                              {member === "You" ? "Y" : member.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{member}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-500">₹</span>
-                          <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={customSplits[member] || ""}
-                            onChange={(e) => handleCustomSplitChange(member, e.target.value)}
-                            className="w-20 text-center"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {amount && (
-                      <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                        <p className="text-sm text-orange-700">
-                          Remaining: ₹{remainingAmount.toFixed(2)}
-                          {remainingAmount !== 0 && (
-                            <span className="ml-2 text-red-600">
-                              {remainingAmount > 0 ? "(Under-allocated)" : "(Over-allocated)"}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+          {/* Split Preview */}
+          {amount && description && Object.keys(finalSplits).length > 0 && (
+            <SplitPreview
+              splits={finalSplits}
+              totalAmount={Number.parseFloat(amount)}
+              description={description}
+              category={selectedCategory}
+              paidBy={paidBy}
+              members={
+                selectedGroupData?.members.map((member, index) => ({
+                  id: member.toLowerCase().replace(" ", ""),
+                  name: member,
+                })) || []
+              }
+              onConfirm={() => {
+                // Handle expense confirmation
+                console.log("Expense confirmed with splits:", finalSplits)
+              }}
+              onShare={() => {
+                // Handle sharing
+                console.log("Share expense")
+              }}
+            />
+          )}
+          {amount && description && Object.keys(finalSplits).length > 0 && (
+            <>
+              {/* Dispute Option */}
+              <div className="flex justify-between items-center pt-3 border-t">
+                <span className="text-sm text-gray-600">Disagree with this split?</span>
+                <CreateDispute
+                  expenseId="temp_expense_id"
+                  expenseTitle={description}
+                  expenseAmount={Number.parseFloat(amount)}
+                  currentSplit={finalSplits}
+                  members={
+                    selectedGroupData?.members.map((member, index) => ({
+                      id: member.toLowerCase().replace(" ", ""),
+                      name: member,
+                    })) || []
+                  }
+                  onDisputeCreated={(dispute) => {
+                    setDisputes((prev) => [...prev, dispute])
+                    // Navigate to disputes page or show success message
+                    console.log("Dispute created:", dispute)
+                  }}
+                />
+              </div>
+            </>
+          )}
 
           {/* UPI Integration */}
           <Card className="border-green-200 bg-green-50">
@@ -351,10 +322,10 @@ export default function AddExpensePage() {
                     <span className="text-teal-700">Group:</span>
                     <span className="font-bold text-teal-800">{selectedGroupData?.name}</span>
                   </div>
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <span className="text-teal-700">Split Type:</span>
                     <span className="font-bold text-teal-800 capitalize">{splitType}</span>
-                  </div>
+                  </div> */}
                 </div>
               </CardContent>
             </Card>

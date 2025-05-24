@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND": "@next_public_mock_data_for_frontend"
+  }
+}
