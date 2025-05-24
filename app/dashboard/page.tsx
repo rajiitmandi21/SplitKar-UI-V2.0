@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -27,50 +27,79 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+// Add at the top of the file
+import { getUserBalance } from "@/lib/data/expenses"
+import { getUserGroups } from "@/lib/data/groups"
+
 export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month")
   const router = useRouter()
 
-  const userBalance = {
-    youOwe: 2450,
-    youAreOwed: 1800,
-    netBalance: -650,
+  // Replace the static userBalance object with:
+  const [userBalance, setUserBalance] = useState({
+    youOwe: 0,
+    youAreOwed: 0,
+    netBalance: 0,
+  })
+
+  // Replace the static activeGroups array with:
+  const [activeGroups, setActiveGroups] = useState([])
+
+  // Add useEffect to load data:
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        // Get current user ID (you'll need to implement authentication context)
+        const currentUserId = getCurrentUserId() // Implement this function
+
+        // Load user balance
+        const balance = await getUserBalance(currentUserId)
+        setUserBalance(balance)
+
+        // Load user groups
+        const groups = await getUserGroups(currentUserId)
+        setActiveGroups(
+          groups.map((group) => ({
+            id: group.id,
+            name: group.name,
+            members: group.member_count,
+            monthlySpend: 0, // You'll need to calculate this
+            yourBalance: group.your_balance,
+            avatar: getGroupAvatar(group.icon),
+            recentActivity: "Loading...",
+          })),
+        )
+      } catch (error) {
+        console.error("Error loading dashboard data:", error)
+      }
+    }
+
+    loadDashboardData()
+  }, [])
+
+  // Helper function to get group avatar
+  const getGroupAvatar = (icon: string) => {
+    const iconMap = {
+      home: "🏠",
+      graduation: "🎓",
+      briefcase: "💼",
+      plane: "✈️",
+      users: "👥",
+    }
+    return iconMap[icon] || "👥"
+  }
+
+  // Helper function to get current user ID (implement based on your auth system)
+  const getCurrentUserId = () => {
+    // This should come from your authentication context/session
+    // For now, return a placeholder
+    return "current-user-id"
   }
 
   const upcomingDues = [
     { name: "WiFi Bill", amount: 200, dueIn: 3, type: "days", urgent: false, id: "due1" },
     { name: "Room Rent", amount: 7500, dueIn: 1, type: "week", urgent: true, id: "due2" },
     { name: "Credit Card EMI", amount: 5000, dueIn: 2, type: "weeks", urgent: false, id: "due3" },
-  ]
-
-  const activeGroups = [
-    {
-      id: "1",
-      name: "Flatmates",
-      members: 4,
-      monthlySpend: 12500,
-      yourBalance: -1200,
-      avatar: "🏠",
-      recentActivity: "Electricity bill added",
-    },
-    {
-      id: "2",
-      name: "College Friends",
-      members: 6,
-      monthlySpend: 3200,
-      yourBalance: 450,
-      avatar: "🎓",
-      recentActivity: "Pizza night settled",
-    },
-    {
-      id: "3",
-      name: "Office Team",
-      members: 8,
-      monthlySpend: 5600,
-      yourBalance: -300,
-      avatar: "💼",
-      recentActivity: "Lunch expenses pending",
-    },
   ]
 
   const recentTransactions = [
