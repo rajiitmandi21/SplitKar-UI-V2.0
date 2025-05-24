@@ -1,16 +1,20 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users table
+-- Users table with UPI ID
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
+    upi_id VARCHAR(100) UNIQUE NOT NULL, -- Required UPI ID
     password_hash VARCHAR(255) NOT NULL,
     avatar_url TEXT,
     role VARCHAR(50) DEFAULT 'user',
     is_verified BOOLEAN DEFAULT false,
+    verification_token VARCHAR(255), -- For email verification
+    reset_token VARCHAR(255), -- For password reset
+    reset_token_expires TIMESTAMP WITH TIME ZONE, -- Reset token expiry
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -132,6 +136,9 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_upi_id ON users(upi_id);
+CREATE INDEX IF NOT EXISTS idx_users_verification_token ON users(verification_token);
+CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
 CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id);
 CREATE INDEX IF NOT EXISTS idx_group_members_user_id ON group_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_group_id ON expenses(group_id);
@@ -162,3 +169,8 @@ CREATE TRIGGER update_friendships_updated_at BEFORE UPDATE ON friendships FOR EA
 CREATE TRIGGER update_settlements_updated_at BEFORE UPDATE ON settlements FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_disputes_updated_at BEFORE UPDATE ON disputes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert default admin user (optional)
+-- INSERT INTO users (email, name, upi_id, password_hash, role, is_verified) 
+-- VALUES ('admin@splitkar.com', 'Admin User', 'admin@paytm', '$2b$10$hashedpassword', 'admin', true)
+-- ON CONFLICT (email) DO NOTHING;

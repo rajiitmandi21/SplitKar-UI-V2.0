@@ -156,6 +156,28 @@ class RealApiClient {
     const endpoint = groupId ? `/expenses?group_id=${groupId}` : "/expenses"
     return this.request(endpoint)
   }
+
+  // Email verification methods
+  async verifyEmail(token: string) {
+    return this.request("/auth/verify", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    })
+  }
+
+  async forgotPassword(email: string) {
+    return this.request("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
+  }
+
+  async resetPassword(token: string, password: string) {
+    return this.request("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    })
+  }
 }
 
 // Factory function to get the appropriate API client
