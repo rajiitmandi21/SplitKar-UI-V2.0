@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -14,18 +14,14 @@ RUN npm run build
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
-RUN adduser -S backend -u 1001
+RUN adduser -S frontend -u 1001
 
 # Change ownership
-RUN chown -R backend:nodejs /app
-USER backend
+RUN chown -R frontend:nodejs /app
+USER frontend
 
 # Expose port
-EXPOSE 5000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "start"]

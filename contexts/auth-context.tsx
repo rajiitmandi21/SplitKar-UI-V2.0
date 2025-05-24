@@ -1,62 +1,143 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { User } from "@/lib/data/users"
+import { apiClient } from "@/lib/api-client"
+
+interface User {
+  id: string
+  email: string
+  name: string
+  phone?: string
+  avatar_url?: string
+  role: string
+  is_verified: boolean
+  created_at: string
+  upi_id?: string
+}
+
+interface UserStats {
+  total_groups: number
+  total_friends: number
+  total_expenses: number
+  net_balance: number
+}
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
+  stats: UserStats | null
   loading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (userData: any) => Promise<void>
+  logout: () => void
+  updateProfile: (updates: any) => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Check for existing session
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("auth_token")
-        if (token) {
-          // Verify token and get user data
-          // This would typically be an API call
-          // const userData = await verifyToken(token)
-          // setUser(userData)
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error)
-        localStorage.removeItem("auth_token")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
+    setMounted(true)
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  useEffect(() => {
+    if (mounted) {
+      checkAuth()
+    }
+  }, [mounted])
+
+  const checkAuth = async () => {
     try {
-      // This would typically be an API call to your authentication endpoint
-      // const { user, token } = await authenticateUser(email, password)
-      // localStorage.setItem('auth_token', token)
-      // setUser(user)
-      return true
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
+      if (token) {
+        apiClient.setToken(token)
+        const response = await apiClient.getProfile()
+        setUser(response.user)
+        setStats(response.stats || response.user?.stats)
+      }
     } catch (error) {
-      console.error("Login failed:", error)
-      return false
+      console.error("Auth check failed:", error)
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await apiClient.login({ email, password })
+      setUser(response.user)
+      setStats(response.user?.stats)
+      await refreshProfile()
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const register = async (userData: any) => {
+    try {
+      const response = await apiClient.register(userData)
+      setUser(response.user)
+      setStats(response.user?.stats)
+      await refreshProfile()
+    } catch (error) {
+      throw error
     }
   }
 
   const logout = () => {
-    localStorage.removeItem("auth_token")
+    apiClient.clearToken()
     setUser(null)
+    setStats(null)
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>
+  const updateProfile = async (updates: any) => {
+    try {
+      const response = await apiClient.updateProfile(updates)
+      setUser(response.user)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const refreshProfile = async () => {
+    try {
+      const response = await apiClient.getProfile()
+      setUser(response.user)
+      setStats(response.stats || response.user?.stats)
+    } catch (error) {
+      console.error("Failed to refresh profile:", error)
+    }
+  }
+
+  // Don't render anything until mounted (prevents SSR issues)
+  if (!mounted) {
+    return null
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        stats,
+        loading,
+        login,
+        register,
+        logout,
+        updateProfile,
+        refreshProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

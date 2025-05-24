@@ -1,44 +1,45 @@
 import express from "express"
 import cors from "cors"
 import helmet from "helmet"
-import rateLimit from "express-rate-limit"
-import { db } from "./config/database"
-
-// Import routes
+import compression from "compression"
+import { validateApiKey, createApiKeyRateLimit, logApiKeyUsage } from "./middleware/apiKey"
 import authRoutes from "./routes/auth"
 import groupRoutes from "./routes/groups"
+import { connectDatabase } from "./config/database"
 
 const app = express()
 
 // Security middleware
 app.use(helmet())
+app.use(compression())
+
+// CORS configuration
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
   }),
 )
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-})
-app.use(limiter)
-
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
-// Health check endpoint
-app.get("/health", async (req, res) => {
-  try {
-    await db.query("SELECT 1")
-    res.json({ status: "healthy", timestamp: new Date().toISOString() })
-  } catch (error) {
-    res.status(500).json({ status: "unhealthy", error: "Database connection failed" })
-  }
+// API key middleware (applied to all routes except health check)
+app.use("/api", validateApiKey)
+app.use("/api", createApiKeyRateLimit())
+app.use("/api", logApiKeyUsage)
+
+// Health check endpoint (no API key required)
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    service: "splitkar-backend",
+    version: "1.0.0",
+  })
 })
 
 // API routes
@@ -49,7 +50,8 @@ app.use("/api/groups", groupRoutes)
 app.use("*", (req, res) => {
   res.status(404).json({
     error: "Not Found",
-    message: "The requested resource was not found",
+    message: "The requested endpoint does not exist.",
+    path: req.originalUrl,
   })
 })
 
@@ -57,17 +59,14 @@ app.use("*", (req, res) => {
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Global error handler:", err)
 
-  if (err.type === "entity.parse.failed") {
-    return res.status(400).json({
-      error: "Bad Request",
-      message: "Invalid JSON in request body",
-    })
-  }
-
-  res.status(500).json({
-    error: "Internal Server Error",
-    message: process.env.NODE_ENV === "production" ? "Something went wrong" : err.message,
+  res.status(err.status || 500).json({
+    error: err.name || "Internal Server Error",
+    message: err.message || "Something went wrong!",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   })
 })
+
+// Initialize database connection
+connectDatabase().catch(console.error)
 
 export default app
