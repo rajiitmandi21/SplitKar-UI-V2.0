@@ -1,30 +1,33 @@
-"use client"
-
 import type React from "react"
-
 import type { Metadata } from "next"
+import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
-import { initializeDatabase } from "@/lib/database"
-import { useEffect } from "react"
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+})
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+})
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.dev",
+  title: "SplitKar - Your No-Drama Expense Buddy",
+  description: "Split bills, track expenses, and settle debts effortlessly. Dosti ka hisaab, bilkul saaf!",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
-  useEffect(() => {
-    // Initialize database connection on app start
-    initializeDatabase().catch(console.error)
-  }, [])
+}) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>{children}</body>
     </html>
   )
 }
