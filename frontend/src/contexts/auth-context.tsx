@@ -45,16 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem("auth_token")
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
       if (token) {
         apiClient.setToken(token)
         const response = await apiClient.getProfile()
         setUser(response.user)
-        setStats(response.stats)
+        setStats(response.stats || response.user?.stats)
       }
     } catch (error) {
       console.error("Auth check failed:", error)
-      localStorage.removeItem("auth_token")
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token")
+      }
     } finally {
       setLoading(false)
     }
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiClient.login({ email, password })
       setUser(response.user)
+      setStats(response.user?.stats)
       await refreshProfile()
     } catch (error) {
       throw error
@@ -74,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiClient.register(userData)
       setUser(response.user)
+      setStats(response.user?.stats)
       await refreshProfile()
     } catch (error) {
       throw error
@@ -99,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiClient.getProfile()
       setUser(response.user)
-      setStats(response.stats)
+      setStats(response.stats || response.user?.stats)
     } catch (error) {
       console.error("Failed to refresh profile:", error)
     }

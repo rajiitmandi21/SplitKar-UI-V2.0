@@ -1,10 +1,12 @@
+import { mockApiClient } from "./mock-api-client"
+
 interface ApiResponse<T = any> {
   data?: T
   error?: string
   message?: string
 }
 
-class ApiClient {
+class RealApiClient {
   private baseUrl: string
   private token: string | null = null
 
@@ -143,6 +145,30 @@ class ApiClient {
       method: "DELETE",
     })
   }
+
+  // Friends methods
+  async getFriends() {
+    return this.request("/friends")
+  }
+
+  // Expenses methods
+  async getExpenses(groupId?: string) {
+    const endpoint = groupId ? `/expenses?group_id=${groupId}` : "/expenses"
+    return this.request(endpoint)
+  }
 }
 
-export const apiClient = new ApiClient()
+// Factory function to get the appropriate API client
+function createApiClient() {
+  const useMockData = process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND === "true"
+
+  if (useMockData) {
+    console.log("🎭 Using Mock API Client for frontend testing")
+    return mockApiClient
+  } else {
+    console.log("🌐 Using Real API Client")
+    return new RealApiClient()
+  }
+}
+
+export const apiClient = createApiClient()

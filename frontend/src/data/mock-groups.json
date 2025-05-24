@@ -1,0 +1,112 @@
+{
+  "groups": [
+    {
+      "id": "group-1",
+      "name": "Weekend Trip",
+      "description": "Mountain getaway with friends",
+      "icon": "🏔️",
+      "color": "#10B981",
+      "currency": "USD",
+      "created_by": "user-1",
+      "created_at": "2024-01-25T10:00:00Z",
+      "updated_at": "2024-01-28T15:30:00Z",
+      "member_count": 4,
+      "total_expenses": 1250.0,
+      "user_balance": 50.25,
+      "members": [
+        {
+          "user_id": "user-1",
+          "role": "admin",
+          "joined_at": "2024-01-25T10:00:00Z"
+        },
+        {
+          "user_id": "user-2",
+          "role": "member",
+          "joined_at": "2024-01-25T10:15:00Z"
+        },
+        {
+          "user_id": "user-3",
+          "role": "member",
+          "joined_at": "2024-01-25T10:20:00Z"
+        },
+        {
+          "user_id": "user-4",
+          "role": "member",
+          "joined_at": "2024-01-25T10:25:00Z"
+        }
+      ]
+    },
+    {
+      "id": "group-2",
+      "name": "Roommates",
+      "description": "Shared apartment expenses",
+      "icon": "🏠",
+      "color": "#3B82F6",
+      "currency": "USD",
+      "created_by": "user-2",
+      "created_at": "2024-01-15T12:00:00Z",
+      "updated_at": "2024-02-01T09:15:00Z",
+      "member_count": 3,
+      "total_expenses": 2100.0,
+      "user_balance": -75.5,
+      "members": [
+        {
+          "user_id": "user-1",
+          "role": "member",
+          "joined_at": "2024-01-15T12:05:00Z"
+        },
+        {
+          "user_id": "user-2",
+          "role": "admin",
+          "joined_at": "2024-01-15T12:00:00Z"
+        },
+        {
+          "user_id": "user-3",
+          "role": "member",
+          "joined_at": "2024-01-15T12:10:00Z"
+        }
+      ]
+    },
+    {
+      "id": "group-3",
+      "name": "Office Lunch",
+      "description": "Team meal expenses",
+      "icon": "🍽️",
+      "color": "#F59E0B",
+      "currency": "USD",
+      "created_by": "user-3",
+      "created_at": "2024-01-30T11:30:00Z",
+      "updated_at": "2024-02-02T13:45:00Z",
+      "member_count": 5,
+      "total_expenses": 850.0,
+      "user_balance": 15.75,
+      "members": [
+        {
+          "user_id": "user-1",
+          "role": "member",
+          "joined_at": "2024-01-30T11:35:00Z"
+        },
+        {
+          "user_id": "user-2",
+          "role": "member",
+          "joined_at": "2024-01-30T11:40:00Z"
+        },
+        {
+          "user_id": "user-3",
+          "role": "admin",
+          "joined_at": "2024-01-30T11:30:00Z"
+        },
+        {
+          "user_id": "user-4",
+          "role": "member",
+          "joined_at": "2024-01-30T11:45:00Z"
+        },
+        {
+          "user_id": "user-5",
+          "role": "member",
+          "joined_at": "2024-01-30T11:50:00Z"
+        }
+      ]
+    }
+  ]
+}

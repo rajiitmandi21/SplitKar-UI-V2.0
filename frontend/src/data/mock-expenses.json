@@ -1,0 +1,164 @@
+{
+  "expenses": [
+    {
+      "id": "expense-1",
+      "group_id": "group-1",
+      "created_by": "user-1",
+      "title": "Hotel Booking",
+      "description": "Mountain resort accommodation for 2 nights",
+      "amount": 800.0,
+      "currency": "USD",
+      "category": "accommodation",
+      "date": "2024-01-26T00:00:00Z",
+      "created_at": "2024-01-26T10:30:00Z",
+      "updated_at": "2024-01-26T10:30:00Z",
+      "split_type": "equal",
+      "participants": [
+        {
+          "user_id": "user-1",
+          "amount_owed": 200.0,
+          "amount_paid": 800.0,
+          "net_amount": 600.0
+        },
+        {
+          "user_id": "user-2",
+          "amount_owed": 200.0,
+          "amount_paid": 0.0,
+          "net_amount": -200.0
+        },
+        {
+          "user_id": "user-3",
+          "amount_owed": 200.0,
+          "amount_paid": 0.0,
+          "net_amount": -200.0
+        },
+        {
+          "user_id": "user-4",
+          "amount_owed": 200.0,
+          "amount_paid": 0.0,
+          "net_amount": -200.0
+        }
+      ]
+    },
+    {
+      "id": "expense-2",
+      "group_id": "group-1",
+      "created_by": "user-2",
+      "title": "Gas & Tolls",
+      "description": "Road trip fuel and highway tolls",
+      "amount": 150.0,
+      "currency": "USD",
+      "category": "transport",
+      "date": "2024-01-27T00:00:00Z",
+      "created_at": "2024-01-27T14:15:00Z",
+      "updated_at": "2024-01-27T14:15:00Z",
+      "split_type": "equal",
+      "participants": [
+        {
+          "user_id": "user-1",
+          "amount_owed": 37.5,
+          "amount_paid": 0.0,
+          "net_amount": -37.5
+        },
+        {
+          "user_id": "user-2",
+          "amount_owed": 37.5,
+          "amount_paid": 150.0,
+          "net_amount": 112.5
+        },
+        {
+          "user_id": "user-3",
+          "amount_owed": 37.5,
+          "amount_paid": 0.0,
+          "net_amount": -37.5
+        },
+        {
+          "user_id": "user-4",
+          "amount_owed": 37.5,
+          "amount_paid": 0.0,
+          "net_amount": -37.5
+        }
+      ]
+    },
+    {
+      "id": "expense-3",
+      "group_id": "group-2",
+      "created_by": "user-2",
+      "title": "Electricity Bill",
+      "description": "Monthly electricity bill for apartment",
+      "amount": 120.0,
+      "currency": "USD",
+      "category": "utilities",
+      "date": "2024-02-01T00:00:00Z",
+      "created_at": "2024-02-01T09:00:00Z",
+      "updated_at": "2024-02-01T09:00:00Z",
+      "split_type": "equal",
+      "participants": [
+        {
+          "user_id": "user-1",
+          "amount_owed": 40.0,
+          "amount_paid": 0.0,
+          "net_amount": -40.0
+        },
+        {
+          "user_id": "user-2",
+          "amount_owed": 40.0,
+          "amount_paid": 120.0,
+          "net_amount": 80.0
+        },
+        {
+          "user_id": "user-3",
+          "amount_owed": 40.0,
+          "amount_paid": 0.0,
+          "net_amount": -40.0
+        }
+      ]
+    },
+    {
+      "id": "expense-4",
+      "group_id": "group-3",
+      "created_by": "user-3",
+      "title": "Team Lunch",
+      "description": "Pizza party for the team",
+      "amount": 85.0,
+      "currency": "USD",
+      "category": "food",
+      "date": "2024-02-02T00:00:00Z",
+      "created_at": "2024-02-02T13:30:00Z",
+      "updated_at": "2024-02-02T13:30:00Z",
+      "split_type": "equal",
+      "participants": [
+        {
+          "user_id": "user-1",
+          "amount_owed": 17.0,
+          "amount_paid": 0.0,
+          "net_amount": -17.0
+        },
+        {
+          "user_id": "user-2",
+          "amount_owed": 17.0,
+          "amount_paid": 0.0,
+          "net_amount": -17.0
+        },
+        {
+          "user_id": "user-3",
+          "amount_owed": 17.0,
+          "amount_paid": 85.0,
+          "net_amount": 68.0
+        },
+        {
+          "user_id": "user-4",
+          "amount_owed": 17.0,
+          "amount_paid": 0.0,
+          "net_amount": -17.0
+        },
+        {
+          "user_id": "user-5",
+          "amount_owed": 17.0,
+          "amount_paid": 0.0,
+          "net_amount": -17.0
+        }
+      ]
+    }
+  ]
+}
