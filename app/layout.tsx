@@ -1,22 +1,20 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Poppins } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/contexts/auth-context"
+import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/toaster"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { TestTube } from "lucide-react"
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-})
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-})
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SplitKar - Your No-Drama Expense Buddy",
-  description: "Split bills, track expenses, and settle debts effortlessly. Dosti ka hisaab, bilkul saaf!",
+  title: "SplitKar - Smart Expense Splitting",
+  description: "Split expenses easily with friends and groups",
     generator: 'v0.dev'
 }
 
@@ -27,7 +25,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>{children}</body>
+      <body className={cn("bg-background", inter.className)}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            {children}
+            <Toaster />
+            {process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND === "true" && (
+              <div className="fixed bottom-4 right-4 z-50">
+                <Link href="/demo">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200 shadow-lg"
+                  >
+                    <TestTube className="w-4 h-4 mr-2" />
+                    Demo Mode
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

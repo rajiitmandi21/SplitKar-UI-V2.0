@@ -1,4 +1,5 @@
 import { mockApiClient } from "./mock-api-client"
+import * as serverActions from "./server-actions"
 
 interface ApiResponse<T = any> {
   data?: T
@@ -7,11 +8,9 @@ interface ApiResponse<T = any> {
 }
 
 class RealApiClient {
-  private baseUrl: string
   private token: string | null = null
 
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api") {
-    this.baseUrl = baseUrl
+  constructor() {
     this.token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
   }
 
@@ -29,35 +28,15 @@ class RealApiClient {
     }
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`
-
-    const config: RequestInit = {
-      headers: {
-        "Content-Type": "application/json",
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
-    }
-
-    try {
-      const response = await fetch(url, config)
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          this.clearToken()
-          window.location.href = "/auth/login"
-        }
-        throw new Error(data.message || data.error || "API request failed")
+  private handleResponse(response: any) {
+    if (response.error) {
+      if (response.error.includes("Unauthorized") || response.error.includes("Invalid token")) {
+        this.clearToken()
+        window.location.href = "/auth/login"
       }
-
-      return data
-    } catch (error) {
-      console.error("API request error:", error)
-      throw error
+      throw new Error(response.error)
     }
+    return response
   }
 
   // Auth methods
@@ -66,35 +45,36 @@ class RealApiClient {
     name: string
     password: string
     phone?: string
+    upi_id?: string
   }) {
-    return this.request("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(userData),
-    })
+    const response = await serverActions.registerUser(userData)
+    return this.handleResponse(response)
   }
 
   async login(credentials: { email: string; password: string }) {
-    const response = await this.request("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    })
+    const response = await serverActions.loginUser(credentials)
 
     if (response.token) {
       this.setToken(response.token)
     }
 
-    return response
+    return this.handleResponse(response)
   }
 
   async getProfile() {
-    return this.request("/auth/profile")
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.getUserProfile(this.token)
+    return this.handleResponse(response)
   }
 
   async updateProfile(updates: any) {
-    return this.request("/auth/profile", {
-      method: "PUT",
-      body: JSON.stringify(updates),
-    })
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.updateUserProfile(this.token, updates)
+    return this.handleResponse(response)
   }
 
   // Group methods
@@ -106,77 +86,93 @@ class RealApiClient {
     currency?: string
     member_ids?: string[]
   }) {
-    return this.request("/groups", {
-      method: "POST",
-      body: JSON.stringify(groupData),
-    })
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.createGroup(this.token, groupData)
+    return this.handleResponse(response)
   }
 
   async getUserGroups() {
-    return this.request("/groups")
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.getUserGroups(this.token)
+    return this.handleResponse(response)
   }
 
   async getGroup(groupId: string) {
-    return this.request(`/groups/${groupId}`)
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.getGroup(this.token, groupId)
+    return this.handleResponse(response)
   }
 
   async updateGroup(groupId: string, updates: any) {
-    return this.request(`/groups/${groupId}`, {
-      method: "PUT",
-      body: JSON.stringify(updates),
-    })
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.updateGroup(this.token, groupId, updates)
+    return this.handleResponse(response)
   }
 
   async deleteGroup(groupId: string) {
-    return this.request(`/groups/${groupId}`, {
-      method: "DELETE",
-    })
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.deleteGroup(this.token, groupId)
+    return this.handleResponse(response)
   }
 
   async addGroupMember(groupId: string, userId: string, role = "member") {
-    return this.request(`/groups/${groupId}/members`, {
-      method: "POST",
-      body: JSON.stringify({ user_id: userId, role }),
-    })
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.addGroupMember(this.token, groupId, userId, role)
+    return this.handleResponse(response)
   }
 
   async removeGroupMember(groupId: string, userId: string) {
-    return this.request(`/groups/${groupId}/members/${userId}`, {
-      method: "DELETE",
-    })
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.removeGroupMember(this.token, groupId, userId)
+    return this.handleResponse(response)
   }
 
   // Friends methods
   async getFriends() {
-    return this.request("/friends")
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.getFriends(this.token)
+    return this.handleResponse(response)
   }
 
   // Expenses methods
   async getExpenses(groupId?: string) {
-    const endpoint = groupId ? `/expenses?group_id=${groupId}` : "/expenses"
-    return this.request(endpoint)
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+    const response = await serverActions.getExpenses(this.token, groupId)
+    return this.handleResponse(response)
   }
 
   // Email verification methods
   async verifyEmail(token: string) {
-    return this.request("/auth/verify", {
-      method: "POST",
-      body: JSON.stringify({ token }),
-    })
+    const response = await serverActions.verifyEmail(token)
+    return this.handleResponse(response)
   }
 
   async forgotPassword(email: string) {
-    return this.request("/auth/forgot-password", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    })
+    const response = await serverActions.forgotPassword(email)
+    return this.handleResponse(response)
   }
 
   async resetPassword(token: string, password: string) {
-    return this.request("/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ token, password }),
-    })
+    const response = await serverActions.resetPassword(token, password)
+    return this.handleResponse(response)
   }
 }
 
@@ -188,7 +184,7 @@ function createApiClient() {
     console.log("🎭 Using Mock API Client for frontend testing")
     return mockApiClient
   } else {
-    console.log("🌐 Using Real API Client")
+    console.log("🌐 Using Real API Client with Server Actions")
     return new RealApiClient()
   }
 }
