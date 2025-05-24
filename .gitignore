@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+*/node_modules*
+/bin
 
 # next.js
 /.next/
@@ -9,6 +10,9 @@
 
 # production
 /build
+
+# deployment related
+/logs
 
 # debug
 npm-debug.log*
@@ -27,3 +31,4 @@ yarn-error.log*
 next-env.d.ts
 *.zip
 .vscode/*
+.env
