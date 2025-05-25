@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer"
 import { google } from "googleapis"
 import { logger } from "../utils/logger"
-import type SMTPTransport from "nodemailer/lib/smtp-transport"
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null
@@ -32,142 +31,45 @@ class EmailService {
     }
   }
 
-  private async initializeTransporter(): Promise<void> {
+  private initializeTransporter(): void {
     try {
-      // Try OAuth2 first if we have all required credentials
-      if (process.env.CLIENT_EMAIL && process.env.PRIVATE_KEY && process.env.CLIENT_ID) {
-        const oauth2Client = new google.auth.OAuth2(process.env.CLIENT_ID, undefined, undefined)
-
-        // Set credentials for service account
-        oauth2Client.setCredentials({
-          private_key: process.env.PRIVATE_KEY?.replace(/\\n/g, "\n"),
-          client_email: process.env.CLIENT_EMAIL,
-          client_id: process.env.CLIENT_ID,
-          private_key_id: process.env.PRIVATE_KEY_ID,
-        } as any)
-
-        try {
-          const accessToken = await oauth2Client.getAccessToken()
-
-          const transportOptions: SMTPTransport.Options = {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false,
-            auth: {
-              type: "OAuth2",
-              user: process.env.CLIENT_EMAIL,
-              clientId: process.env.CLIENT_ID,
-              clientSecret: undefined,
-              refreshToken: undefined,
-              accessToken: accessToken.token || undefined,
-            },
-          }
-
-          this.transporter = nodemailer.createTransport(transportOptions)
-          await this.transporter.verify()
-          logger.info("✅ Email transporter initialized with OAuth2")
-          return
-        } catch (oauthError) {
-          logger.warn("OAuth2 setup failed, falling back to SMTP", { error: oauthError })
-        }
-      }
-
-      // Fallback to simple SMTP
-      this.initializeFallbackTransporter()
-    } catch (error) {
-      logger.error("❌ Failed to initialize email transporter", { error })
-      this.initializeFallbackTransporter()
-    }
-  }
-
-  private initializeFallbackTransporter(): void {
-    try {
-      // Simple SMTP configuration as fallback
-      const fallbackOptions: SMTPTransport.Options = {
-        host: "smtp.gmail.com",
-        port: 587,
+      // Simple SMTP configuration
+      const options = {
+        host: process.env.SMTP_HOST || "smtp.ethereal.email",
+        port: Number.parseInt(process.env.SMTP_PORT || "587"),
         secure: false,
         auth: {
-          user: process.env.CLIENT_EMAIL,
-          pass: process.env.GMAIL_APP_PASSWORD, // App-specific password if available
+          user: process.env.SMTP_USER || "ethereal.user@ethereal.email",
+          pass: process.env.SMTP_PASSWORD || "ethereal_pass",
         },
       }
 
-      this.transporter = nodemailer.createTransport(fallbackOptions)
-
-      logger.warn("⚠️ Using fallback SMTP transporter")
+      this.transporter = nodemailer.createTransport(options)
+      logger.info("✅ Email transporter initialized")
     } catch (error) {
-      logger.error("❌ Failed to initialize fallback transporter", { error })
+      logger.error("❌ Failed to initialize email transporter", { error })
     }
   }
 
   async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<boolean> {
-    const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify?token=${verificationToken}`
+    const verificationUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/verify?token=${verificationToken}`
 
     const mailOptions = {
-      from: `"SplitKar" <${process.env.CLIENT_EMAIL}>`,
+      from: `"SplitKar" <${process.env.SMTP_USER || "noreply@splitkar.com"}>`,
       to: email,
       subject: "Verify your SplitKar account",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%); padding: 30px 20px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">Welcome to SplitKar!</h1>
-            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Smart Expense Splitting Made Easy</p>
-          </div>
-          
-          <!-- Content -->
-          <div style="padding: 40px 30px; background: #f9fafb;">
-            <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">Hi ${name}! 👋</h2>
-            
-            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-              Thank you for joining SplitKar! We're excited to help you manage your expenses with friends and family.
-            </p>
-            
-            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
-              To get started, please verify your email address by clicking the button below:
-            </p>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center; margin: 40px 0;">
-              <a href="${verificationUrl}" 
-                 style="background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%); 
-                        color: white; 
-                        padding: 16px 32px; 
-                        text-decoration: none; 
-                        border-radius: 8px; 
-                        font-weight: bold;
-                        font-size: 16px;
-                        display: inline-block;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                Verify Email Address
-              </a>
-            </div>
-            
-            <!-- Alternative Link -->
-            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-              <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
-                If the button doesn't work, copy and paste this link into your browser:
-              </p>
-              <p style="margin: 0;">
-                <a href="${verificationUrl}" style="color: #3b82f6; word-break: break-all;">${verificationUrl}</a>
-              </p>
-            </div>
-            
-            <p style="color: #6b7280; font-size: 14px; margin: 30px 0 0 0; text-align: center;">
-              This verification link will expire in 24 hours for security reasons.
-            </p>
-          </div>
-          
-          <!-- Footer -->
-          <div style="background: #e5e7eb; padding: 20px; text-align: center;">
-            <p style="color: #6b7280; font-size: 12px; margin: 0;">
-              If you didn't create this account, please ignore this email.
-            </p>
-            <p style="color: #6b7280; font-size: 12px; margin: 10px 0 0 0;">
-              © 2024 SplitKar. All rights reserved.
-            </p>
-          </div>
+          <h1>Welcome to SplitKar!</h1>
+          <p>Hi ${name}! 👋</p>
+          <p>Thank you for joining SplitKar! We're excited to help you manage your expenses with friends and family.</p>
+          <p>To get started, please verify your email address by clicking the button below:</p>
+          <a href="${verificationUrl}" style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+            Verify Email Address
+          </a>
+          <p>If the button doesn't work, copy and paste this link into your browser:</p>
+          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+          <p>This verification link will expire in 24 hours for security reasons.</p>
         </div>
       `,
     }
@@ -175,6 +77,12 @@ class EmailService {
     try {
       if (!this.transporter) {
         throw new Error("Email transporter not initialized")
+      }
+
+      // For development, just log the email instead of sending it
+      if (process.env.NODE_ENV === "development") {
+        logger.info(`✅ [DEV] Verification email for ${email}`, { verificationUrl })
+        return true
       }
 
       await this.transporter.sendMail(mailOptions)
@@ -187,10 +95,10 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, name: string, resetToken: string): Promise<boolean> {
-    const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`
+    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/reset-password?token=${resetToken}`
 
     const mailOptions = {
-      from: `"SplitKar" <${process.env.CLIENT_EMAIL}>`,
+      from: `"SplitKar" <${process.env.SMTP_USER || "noreply@splitkar.com"}>`,
       to: email,
       subject: "Reset your SplitKar password",
       html: `
@@ -273,7 +181,7 @@ class EmailService {
 
   async sendWelcomeEmail(email: string, name: string): Promise<boolean> {
     const mailOptions = {
-      from: `"SplitKar" <${process.env.CLIENT_EMAIL}>`,
+      from: `"SplitKar" <${process.env.SMTP_USER || "noreply@splitkar.com"}>`,
       to: email,
       subject: "Welcome to SplitKar! 🎉",
       html: `
@@ -307,7 +215,7 @@ class EmailService {
             
             <!-- CTA Button -->
             <div style="text-align: center; margin: 40px 0;">
-              <a href="${process.env.FRONTEND_URL}/dashboard" 
+              <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard" 
                  style="background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%); 
                         color: white; 
                         padding: 16px 32px; 

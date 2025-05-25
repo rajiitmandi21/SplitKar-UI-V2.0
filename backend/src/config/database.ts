@@ -7,7 +7,7 @@ class Database {
 
   constructor() {
     // Load environment variables first
-    const databaseUrl = process.env.DATABASE_URL
+    const databaseUrl = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/splitkar"
 
     logger.info("🔍 Environment check", {
       nodeEnv: process.env.NODE_ENV,
@@ -15,18 +15,6 @@ class Database {
       databaseUrlLength: databaseUrl?.length || 0,
       databaseUrlPrefix: databaseUrl?.substring(0, 10) || "undefined",
     })
-
-    if (!databaseUrl) {
-      logger.error("❌ DATABASE_URL environment variable is required")
-      throw new Error("DATABASE_URL environment variable is required")
-    }
-
-    // Validate URL format
-    const urlPattern = /^postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)(\?.*)?$/
-    if (!urlPattern.test(databaseUrl)) {
-      logger.error("❌ Invalid DATABASE_URL format", { url: databaseUrl.substring(0, 20) + "..." })
-      throw new Error("DATABASE_URL must be in format: postgres://user:pwd@host.com:port/xyz?sslmode=require")
-    }
 
     logger.info("🔗 Connecting to database...")
 
@@ -47,32 +35,6 @@ class Database {
       logger.error("❌ Unexpected error on idle client", { error: err.message, stack: err.stack })
       this.isConnected = false
     })
-
-    // Test the connection immediately
-    this.testConnection()
-  }
-
-  private async testConnection(): Promise<void> {
-    try {
-      logger.info("🔍 Testing database connection...")
-      const client = await this.pool.connect()
-      const result = await client.query("SELECT NOW() as current_time, version() as pg_version")
-
-      logger.info("✅ Database connected successfully", {
-        serverTime: result.rows[0].current_time,
-        pgVersion: result.rows[0].pg_version.split(" ")[0],
-      })
-
-      client.release()
-      this.isConnected = true
-    } catch (error) {
-      logger.error("❌ Database connection failed", {
-        error: error instanceof Error ? error.message : "Unknown error",
-        code: (error as any)?.code,
-      })
-      this.isConnected = false
-      throw error
-    }
   }
 
   async query(text: string, params?: any[]): Promise<any> {
@@ -147,6 +109,29 @@ class Database {
     logger.info("✅ Database connection closed")
   }
 
+  async testConnection(): Promise<void> {
+    try {
+      logger.info("🔍 Testing database connection...")
+      const client = await this.pool.connect()
+      const result = await client.query("SELECT NOW() as current_time, version() as pg_version")
+
+      logger.info("✅ Database connected successfully", {
+        serverTime: result.rows[0].current_time,
+        pgVersion: result.rows[0].pg_version.split(" ")[0],
+      })
+
+      client.release()
+      this.isConnected = true
+    } catch (error) {
+      logger.error("❌ Database connection failed", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        code: (error as any)?.code,
+      })
+      this.isConnected = false
+      throw error
+    }
+  }
+
   async healthCheck(): Promise<{ status: string; details: any }> {
     try {
       const client = await this.pool.connect()
@@ -200,12 +185,15 @@ class Database {
   }
 }
 
-// Create singleton instance
-const dbInstance: Database | null = null
+// Create and export database instance
+const db = new Database()
 
-export const db = new Database()
+// Export the database instance as getDB for compatibility
+export const getDB = () => db
 
 export const connectDatabase = async (): Promise<void> => {
+  // Test the connection immediately
+  await db.testConnection()
   logger.info("Database connection initialized")
 }
 

@@ -24,8 +24,6 @@ winston.addColors(logColors)
 
 // Get log level from environment
 const logLevel = process.env.LOG_LEVEL || "info"
-const logFormat = process.env.LOG_FORMAT || "json"
-const logFileEnabled = process.env.LOG_FILE_ENABLED === "true"
 
 // Create formatters
 const consoleFormat = winston.format.combine(
@@ -40,7 +38,7 @@ const consoleFormat = winston.format.combine(
 const fileFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
-  logFormat === "json" ? winston.format.json() : winston.format.simple(),
+  winston.format.json(),
 )
 
 // Create transports
@@ -52,6 +50,7 @@ const transports: winston.transport[] = [
 ]
 
 // Add file transport if enabled
+const logFileEnabled = process.env.LOG_FILE_ENABLED === "true"
 if (logFileEnabled) {
   transports.push(
     new DailyRotateFile({
