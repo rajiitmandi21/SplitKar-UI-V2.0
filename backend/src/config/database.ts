@@ -1,8 +1,10 @@
 import { Pool, type PoolClient } from "pg"
 import { logger } from "../utils/logger"
 
+// Database connection pool
+let pool: Pool | null = null
+
 class Database {
-  private pool: Pool
   private isConnected = false
 
   constructor() {
@@ -18,7 +20,7 @@ class Database {
 
     logger.info("🔗 Connecting to database...")
 
-    this.pool = new Pool({
+    pool = new Pool({
       connectionString: databaseUrl,
       ssl: databaseUrl.includes("sslmode=require") ? { rejectUnauthorized: false } : false,
       max: 20,
@@ -26,12 +28,12 @@ class Database {
       connectionTimeoutMillis: 5000,
     })
 
-    this.pool.on("connect", () => {
+    pool.on("connect", () => {
       logger.info("✅ Database client connected")
       this.isConnected = true
     })
 
-    this.pool.on("error", (err: Error) => {
+    pool.on("error", (err: Error) => {
       logger.error("❌ Unexpected error on idle client", { error: err.message, stack: err.stack })
       this.isConnected = false
     })
@@ -53,7 +55,7 @@ class Database {
     })
 
     try {
-      const result = await this.pool.query(text, params)
+      const result = await pool!.query(text, params)
       const duration = Date.now() - start
 
       if (duration > 1000) {
@@ -84,11 +86,11 @@ class Database {
   }
 
   async getClient(): Promise<PoolClient> {
-    return await this.pool.connect()
+    return await pool!.connect()
   }
 
   async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
-    const client = await this.pool.connect()
+    const client = await pool!.connect()
     try {
       await client.query("BEGIN")
       const result = await callback(client)
@@ -104,15 +106,17 @@ class Database {
 
   async close(): Promise<void> {
     logger.info("🔌 Closing database connection...")
-    await this.pool.end()
-    this.isConnected = false
-    logger.info("✅ Database connection closed")
+    if (pool) {
+      await pool.end()
+      this.isConnected = false
+      logger.info("✅ Database connection closed")
+    }
   }
 
   async testConnection(): Promise<void> {
     try {
       logger.info("🔍 Testing database connection...")
-      const client = await this.pool.connect()
+      const client = await pool!.connect()
       const result = await client.query("SELECT NOW() as current_time, version() as pg_version")
 
       logger.info("✅ Database connected successfully", {
@@ -134,7 +138,7 @@ class Database {
 
   async healthCheck(): Promise<{ status: string; details: any }> {
     try {
-      const client = await this.pool.connect()
+      const client = await pool!.connect()
       const result = await client.query(`
         SELECT 
           current_database() as database_name,
@@ -152,9 +156,9 @@ class Database {
           user: result.rows[0].user_name,
           version: result.rows[0].version.split(" ")[0],
           timestamp: result.rows[0].current_time,
-          pool_total: this.pool.totalCount,
-          pool_idle: this.pool.idleCount,
-          pool_waiting: this.pool.waitingCount,
+          pool_total: pool!.totalCount,
+          pool_idle: pool!.idleCount,
+          pool_waiting: pool!.waitingCount,
         },
       }
 
@@ -177,35 +181,84 @@ class Database {
 
   getConnectionInfo() {
     return {
-      totalCount: this.pool.totalCount,
-      idleCount: this.pool.idleCount,
-      waitingCount: this.pool.waitingCount,
+      totalCount: pool?.totalCount || 0,
+      idleCount: pool?.idleCount || 0,
+      waitingCount: pool?.waitingCount || 0,
       isConnected: this.isConnected,
     }
   }
 }
 
-// Create and export database instance
-const db = new Database()
+// Get database instance
+export const getDB = () => {
+  if (!pool) {
+    throw new Error("Database not initialized. Call connectDatabase() first.")
+  }
+  return pool
+}
 
-// Export the database instance as getDB for compatibility
-export const getDB = () => db
+// Export db for compatibility
+export const db = {
+  query: async (text: string, params?: any[]) => {
+    const client = await getDB().connect()
+    try {
+      const result = await client.query(text, params)
+      return result
+    } finally {
+      client.release()
+    }
+  },
+  transaction: async (callback: (client: any) => Promise<any>) => {
+    const client = await getDB().connect()
+    try {
+      await client.query("BEGIN")
+      const result = await callback(client)
+      await client.query("COMMIT")
+      return result
+    } catch (error) {
+      await client.query("ROLLBACK")
+      throw error
+    } finally {
+      client.release()
+    }
+  },
+}
 
-export const connectDatabase = async (): Promise<void> => {
-  // Test the connection immediately
-  await db.testConnection()
-  logger.info("Database connection initialized")
+// Initialize database connection
+export const initializeDatabase = async (): Promise<void> => {
+  try {
+    const connectionString = process.env.DATABASE_URL || "postgresql://localhost:5432/splitkar_dev"
+
+    pool = new Pool({
+      connectionString,
+      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    })
+
+    // Test the connection
+    const client = await pool.connect()
+    await client.query("SELECT NOW()")
+    client.release()
+
+    logger.info("✅ Database connected successfully")
+  } catch (error) {
+    logger.error("❌ Database connection failed", { error })
+    throw error
+  }
 }
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
   logger.info("🛑 Received SIGINT, closing database connection...")
-  await db.close()
+  if (pool) {
+    await pool.end()
+  }
   process.exit(0)
 })
 
 process.on("SIGTERM", async () => {
   logger.info("🛑 Received SIGTERM, closing database connection...")
-  await db.close()
+  if (pool) {
+    await pool.end()
+  }
   process.exit(0)
 })
