@@ -1,15 +1,9 @@
-import dotenv from "dotenv"
-
-// Load environment variables first
-dotenv.config()
-
 import express from "express"
 import cors from "cors"
 import helmet from "helmet"
-import { logger } from "./utils/logger"
 
 const app = express()
-const PORT = process.env.PORT || 5001 // Changed from 5000 to 5001
+const PORT = process.env.PORT || 5001
 
 // Middleware
 app.use(helmet())
@@ -21,6 +15,19 @@ app.use(
 )
 app.use(express.json())
 
+// Simple logger
+const logger = {
+  info: (message: string, data?: any) => {
+    console.log(`ℹ️  ${message}`, data ? JSON.stringify(data, null, 2) : "")
+  },
+  error: (message: string, data?: any) => {
+    console.error(`❌ ${message}`, data ? JSON.stringify(data, null, 2) : "")
+  },
+  warn: (message: string, data?: any) => {
+    console.warn(`⚠️  ${message}`, data ? JSON.stringify(data, null, 2) : "")
+  },
+}
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.json({
@@ -31,34 +38,39 @@ app.get("/health", (req, res) => {
   })
 })
 
-// Basic auth endpoint for testing
+// Basic auth endpoints for testing
 app.post("/api/auth/register", (req, res) => {
-  const { name, email, password } = req.body
+  const { name, email, password, upi_id } = req.body
+
+  logger.info("Registration attempt", { name, email, upi_id })
 
   // Simple validation
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !upi_id) {
     return res.status(400).json({
       success: false,
-      message: "Missing required fields",
+      message: "Missing required fields: name, email, password, upi_id",
     })
   }
 
-  // In a real app, you would save to database here
-  logger.info("Registration attempt:", { name, email })
-
-  // Return success response
+  // Mock successful registration
   res.status(201).json({
     success: true,
-    message: "User registered successfully",
-    user: { id: "temp-id-123", name, email },
+    message: "User registered successfully. Please check your email to verify your account.",
+    user: {
+      id: `user-${Date.now()}`,
+      name,
+      email,
+      upi_id,
+      is_verified: false,
+    },
   })
 })
 
-// Login endpoint for testing
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body
 
-  // Simple validation
+  logger.info("Login attempt", { email })
+
   if (!email || !password) {
     return res.status(400).json({
       success: false,
@@ -66,15 +78,17 @@ app.post("/api/auth/login", (req, res) => {
     })
   }
 
-  // In a real app, you would verify credentials here
-  logger.info("Login attempt:", { email })
-
-  // Return mock token
-  res.status(200).json({
+  // Mock successful login
+  res.json({
     success: true,
     message: "Login successful",
-    token: "mock-jwt-token-123",
-    user: { id: "temp-id-123", name: "Test User", email },
+    token: `mock-jwt-${Date.now()}`,
+    user: {
+      id: `user-${Date.now()}`,
+      name: "Test User",
+      email,
+      is_verified: true,
+    },
   })
 })
 
@@ -82,17 +96,17 @@ app.post("/api/auth/login", (req, res) => {
 app.post("/api/test/send-email", (req, res) => {
   const { email } = req.body
 
-  logger.info("Test email request:", { email })
+  logger.info("Test email request", { email })
 
-  // Mock email sending for now
+  // Mock email sending
   res.json({
     success: true,
-    message: "Test email sent successfully",
-    verificationUrl: `http://localhost:3000/auth/verify?token=test-token-123`,
+    message: "Test email sent successfully (development mode)",
+    verificationUrl: `http://localhost:3000/auth/verify?token=test-token-${Date.now()}`,
   })
 })
 
-// Start server function with better error handling
+// Start server function
 export async function startServer() {
   return new Promise<void>((resolve, reject) => {
     const server = app.listen(PORT, () => {
@@ -107,13 +121,10 @@ export async function startServer() {
 
     server.on("error", (error: any) => {
       if (error.code === "EADDRINUSE") {
-        logger.error(`❌ Port ${PORT} is already in use`, {
-          port: PORT,
-          suggestion: `Try running: lsof -ti:${PORT} | xargs kill -9`,
-        })
+        logger.error(`Port ${PORT} is already in use`)
         reject(new Error(`Port ${PORT} is already in use`))
       } else {
-        logger.error("❌ Failed to start server", { error: error.message })
+        logger.error("Failed to start server", { error: error.message })
         reject(error)
       }
     })
@@ -121,17 +132,17 @@ export async function startServer() {
 }
 
 // Graceful shutdown
-process.on("SIGTERM", async () => {
+process.on("SIGTERM", () => {
   logger.info("SIGTERM received, shutting down gracefully")
   process.exit(0)
 })
 
-process.on("SIGINT", async () => {
+process.on("SIGINT", () => {
   logger.info("SIGINT received, shutting down gracefully")
   process.exit(0)
 })
 
-// Only start server if this file is run directly
+// Start server if this file is run directly
 if (require.main === module) {
   startServer().catch((error) => {
     console.error("Failed to start server:", error.message)
