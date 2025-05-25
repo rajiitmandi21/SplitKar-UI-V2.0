@@ -145,19 +145,19 @@ export default function LandingPage() {
             <div className="md:hidden mt-4 pb-4 border-t border-outline-variant dark:border-outline-variant-dark pt-4">
               <nav className="flex flex-col space-y-4">
                 <a href="#features" className="text-on-surface-variant dark:text-on-surface-variant-dark hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-200 font-medium">
-                  Features
-                </a>
+              Features
+            </a>
                 <a href="#how-it-works" className="text-on-surface-variant dark:text-on-surface-variant-dark hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-200 font-medium">
-                  How it Works
-                </a>
+              How it Works
+            </a>
                 <a href="#testimonials" className="text-on-surface-variant dark:text-on-surface-variant-dark hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-200 font-medium">
-                  Reviews
-                </a>
-                <Link href="/auth">
+              Reviews
+            </a>
+          <Link href="/auth">
                   <MaterialButton variant="filled" fullWidth className="mt-4">
-                    Get Started
+              Get Started
                   </MaterialButton>
-                </Link>
+          </Link>
               </nav>
             </div>
           )}
@@ -179,7 +179,7 @@ export default function LandingPage() {
               <MaterialCard elevation={2} className="bg-secondary-container dark:bg-secondary-container-dark border-0 px-6 py-3 rounded-full">
                 <span className="text-on-secondary-container dark:text-on-secondary-container-dark font-semibold flex items-center gap-2">
                   <Smartphone className="w-4 h-4" />
-                  India's Smartest Expense Buddy
+            India's Smartest Expense Buddy
                 </span>
               </MaterialCard>
             </div>
@@ -192,8 +192,8 @@ export default function LandingPage() {
                 <span className="bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary bg-clip-text text-transparent">
                   No-Drama
                 </span>{" "}
-                Expense Buddy
-              </h1>
+            Expense Buddy
+          </h1>
             </div>
 
             {/* Subtitle */}
@@ -208,7 +208,7 @@ export default function LandingPage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-              <Link href="/auth">
+            <Link href="/auth">
                 <MaterialButton variant="filled" size="lg" elevation={3} className="text-lg px-8 py-4">
                   Start Splitting
                   <ArrowRight className="ml-2 w-5 h-5" />
@@ -219,10 +219,10 @@ export default function LandingPage() {
                   <Play className="mr-2 w-5 h-5" />
                   Logo Demo
                 </MaterialButton>
-              </Link>
-            </div>
+            </Link>
+          </div>
 
-            {/* Hero Illustration */}
+          {/* Hero Illustration */}
             <div className="pt-12">
               <MaterialCard elevation={4} className="bg-surface-container-highest dark:bg-surface-container-highest-dark rounded-3xl p-8 mx-auto max-w-2xl border-0 shadow-2xl">
                 <div className="grid grid-cols-3 gap-6 items-center">
@@ -242,20 +242,20 @@ export default function LandingPage() {
                         Dinner Bill
                       </p>
                     </div>
-                  </div>
+                </div>
                   <div className="text-center space-y-3">
                     <div className="w-20 h-20 bg-gradient-to-br from-secondary-light to-primary-light dark:from-secondary to-primary-dark rounded-full mx-auto flex items-center justify-center shadow-lg ring-4 ring-white/20 dark:ring-black/20">
                       <span className="text-white font-bold text-xl">P</span>
-                    </div>
+                </div>
                     <p className="text-on-surface dark:text-on-surface-dark font-semibold">Priya</p>
                   </div>
                 </div>
                 <div className="mt-6 text-center">
                   <MaterialButton variant="filled" size="md" className="bg-success-500 hover:bg-success-600 text-white shadow-lg">
                     <IndianRupee className="w-4 h-4 mr-2" />
-                    Pay ₹600 via UPI
+                  Pay ₹600 via UPI
                   </MaterialButton>
-                </div>
+              </div>
               </MaterialCard>
             </div>
           </div>
@@ -340,12 +340,12 @@ export default function LandingPage() {
               <MaterialCard key={index} elevation={3} className="p-8 text-center border-0 group hover:scale-105 transition-all duration-300">
                 <MaterialCardContent className="p-0 space-y-6">
                   <div className={cn("w-20 h-20 rounded-3xl mx-auto flex items-center justify-center text-white shadow-xl bg-gradient-to-br", useCase.gradient)}>
-                    {useCase.icon}
-                  </div>
+                  {useCase.icon}
+                </div>
                   <div className="space-y-3">
                     <h3 className="text-2xl font-semibold text-on-surface dark:text-on-surface-dark">{useCase.title}</h3>
                     <p className="text-on-surface-variant dark:text-on-surface-variant-dark leading-relaxed">{useCase.description}</p>
-                  </div>
+              </div>
                 </MaterialCardContent>
               </MaterialCard>
             ))}
@@ -402,14 +402,14 @@ export default function LandingPage() {
             </h2>
             <p className="text-xl text-on-primary-container-light dark:text-on-primary-container-dark leading-relaxed">
               Join thousands of users who've made expense splitting effortless. Start your journey today!
-            </p>
+          </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/auth">
+          <Link href="/auth">
                 <MaterialButton variant="filled" size="lg" elevation={3} className="text-lg px-8 py-4 bg-primary-light dark:bg-primary-dark text-on-primary-light dark:text-on-primary-dark">
                   Get Started Free
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </MaterialButton>
-              </Link>
+          </Link>
               <MaterialButton variant="outlined" size="lg" className="text-lg px-8 py-4 border-2 border-on-primary-container-light dark:border-on-primary-container-dark text-on-primary-container-light dark:text-on-primary-container-dark">
                 Learn More
               </MaterialButton>

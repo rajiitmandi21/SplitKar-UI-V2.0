@@ -220,7 +220,7 @@ export default function OnboardingClientPage() {
           <div className="text-center space-y-4">
             <div className="w-12 h-12 border-4 border-primary-light dark:border-primary-dark border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-on-surface-variant dark:text-on-surface-variant-dark">Loading your profile...</p>
-          </div>
+        </div>
         </MaterialCard>
       </div>
     )
@@ -235,7 +235,7 @@ export default function OnboardingClientPage() {
             <div className="flex items-center space-x-3">
               <SplitKarIcon size="sm" />
               <div>
-                <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
                   <span className="text-sm text-on-surface-variant dark:text-on-surface-variant-dark">Welcome to</span>
                   <SplitKarLogoCompact />
                 </div>
@@ -265,8 +265,8 @@ export default function OnboardingClientPage() {
               <div className="text-right">
                 <div className="text-2xl font-bold text-primary-light dark:text-primary-dark">{Math.round(progress)}%</div>
                 <div className="text-xs text-on-surface-variant dark:text-on-surface-variant-dark">Complete</div>
-              </div>
-            </div>
+        </div>
+      </div>
             <Progress 
               value={progress} 
               className="h-3 bg-surface-container dark:bg-surface-container-dark"
@@ -347,16 +347,16 @@ export default function OnboardingClientPage() {
                     <Label htmlFor="email" className="text-on-surface dark:text-on-surface-dark font-semibold">
                       Email Address *
                     </Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
                       placeholder="your@email.com"
-                      value={profileData.email}
-                      onChange={handleInputChange}
+                        value={profileData.email}
+                        onChange={handleInputChange}
                       className="h-12 bg-surface-container-highest dark:bg-surface-container-highest-dark border-outline dark:border-outline-dark rounded-xl"
                       required
-                    />
+                      />
                   </div>
 
                   <div className="space-y-2">
@@ -366,7 +366,7 @@ export default function OnboardingClientPage() {
                     <div className="flex">
                       <div className="flex items-center px-4 bg-surface-container dark:bg-surface-container-dark border border-r-0 border-outline dark:border-outline-dark rounded-l-xl h-12">
                         <span className="text-sm text-on-surface dark:text-on-surface-dark font-semibold">+91</span>
-                      </div>
+                    </div>
                       <Input
                         id="phone"
                         name="phone"
@@ -448,14 +448,14 @@ export default function OnboardingClientPage() {
               <MaterialCardContent className="space-y-8">
                 {/* Search Section */}
                 <div className="space-y-4">
-                  <div className="relative">
+                <div className="relative">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-on-surface-variant dark:text-on-surface-variant-dark" />
                     <Input
                       placeholder="Search by name, email, or phone number"
                       className="pl-12 h-12 bg-surface-container-highest dark:bg-surface-container-highest-dark border-outline dark:border-outline-dark rounded-xl"
                     />
-                  </div>
-                  
+                </div>
+
                   <div className="flex flex-wrap gap-3">
                     <MaterialButton variant="outlined" size="sm">
                       <Mail className="w-4 h-4 mr-2" />
@@ -484,7 +484,7 @@ export default function OnboardingClientPage() {
                         elevation={selectedFriends.includes(friend.id) ? 3 : 1}
                         className={cn(
                           "cursor-pointer transition-all duration-200 border-0",
-                          selectedFriends.includes(friend.id) 
+                          selectedFriends.includes(friend.id)
                             ? "ring-2 ring-primary-light dark:ring-primary-dark ring-offset-2 ring-offset-surface dark:ring-offset-surface-dark bg-primary-container-light/20 dark:bg-primary-container-dark/20" 
                             : "hover:scale-105"
                         )}
@@ -494,9 +494,9 @@ export default function OnboardingClientPage() {
                           <div className="flex items-center space-x-4">
                             <Avatar className="w-12 h-12">
                               <AvatarFallback className="bg-gradient-to-br from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary text-white font-bold">
-                                {friend.avatar}
-                              </AvatarFallback>
-                            </Avatar>
+                              {friend.avatar}
+                            </AvatarFallback>
+                          </Avatar>
                             <div className="flex-1">
                               <p className="font-semibold text-on-surface dark:text-on-surface-dark">{friend.name}</p>
                               <p className="text-sm text-on-surface-variant dark:text-on-surface-variant-dark">{friend.email}</p>
@@ -531,7 +531,7 @@ export default function OnboardingClientPage() {
                         <MaterialButton variant="text" size="sm" onClick={() => setSelectedFriends([])}>
                           Clear all
                         </MaterialButton>
-                      </div>
+                  </div>
                     </MaterialCardContent>
                   </MaterialCard>
                 )}
@@ -556,23 +556,23 @@ export default function OnboardingClientPage() {
               
               <MaterialCardContent className="space-y-8">
                 <div className="grid md:grid-cols-2 gap-6">
-                  {recurringBills.map((bill) => (
+                    {recurringBills.map((bill) => (
                     <MaterialCard
-                      key={bill.id}
+                        key={bill.id}
                       elevation={selectedBills.includes(bill.id) ? 3 : 1}
                       className={cn(
                         "cursor-pointer transition-all duration-200 border-0",
-                        selectedBills.includes(bill.id) 
+                          selectedBills.includes(bill.id)
                           ? "ring-2 ring-primary-light dark:ring-primary-dark ring-offset-2 ring-offset-surface dark:ring-offset-surface-dark" 
                           : "hover:scale-105"
                       )}
-                      onClick={() => toggleBill(bill.id)}
-                    >
+                        onClick={() => toggleBill(bill.id)}
+                      >
                       <MaterialCardContent className="p-6">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br", bill.color)}>
-                              {bill.icon}
+                            {bill.icon}
                             </div>
                             {selectedBills.includes(bill.id) && (
                               <CheckCircle className="w-6 h-6 text-primary-light dark:text-primary-dark" />
@@ -601,8 +601,8 @@ export default function OnboardingClientPage() {
                         <p className="text-sm text-on-surface-variant dark:text-on-surface-variant-dark">
                           Create your own recurring expense category
                         </p>
-                      </div>
-                    </div>
+                  </div>
+                </div>
                   </MaterialCardContent>
                 </MaterialCard>
 
@@ -639,7 +639,7 @@ export default function OnboardingClientPage() {
                             </span>
                           </div>
                         </div>
-                      </div>
+                  </div>
                     </MaterialCardContent>
                   </MaterialCard>
                 )}
@@ -657,8 +657,8 @@ export default function OnboardingClientPage() {
             disabled={currentStep === 1}
             className="px-8"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
           </MaterialButton>
 
           <div className="flex items-center space-x-2">
@@ -678,23 +678,23 @@ export default function OnboardingClientPage() {
           <MaterialButton
             variant="filled"
             size="lg"
-            onClick={handleNext}
-            disabled={isLoading}
+                onClick={handleNext}
+                disabled={isLoading}
             loading={isLoading}
             elevation={2}
             className="px-8"
-          >
+              >
             {currentStep === totalSteps ? (
-              <>
+                  <>
                 Complete Setup
                 <CheckCircle className="w-4 h-4 ml-2" />
-              </>
-            ) : (
-              <>
+                  </>
+                ) : (
+                  <>
                 Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </>
-            )}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
           </MaterialButton>
         </div>
       </div>

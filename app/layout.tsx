@@ -52,13 +52,13 @@ export default function RootLayout({
         <meta name="color-scheme" content="light dark" />
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <AuthProvider>
+          <AuthProvider>
           <ThemeProvider>
             <ClientLayout>
-              {children}
+            {children}
             </ClientLayout>
           </ThemeProvider>
-        </AuthProvider>
+          </AuthProvider>
       </body>
     </html>
   )

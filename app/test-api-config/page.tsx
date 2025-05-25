@@ -35,23 +35,23 @@ export default function TestApiConfig() {
 
   return (
     <div className="container mx-auto p-4">
-      <Card>
-        <CardHeader>
+        <Card>
+          <CardHeader>
           <CardTitle>API Configuration Test</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </CardHeader>
+          <CardContent className="space-y-4">
           <Button onClick={testApiConfig}>Test API Config</Button>
           <Button onClick={testApiCall} disabled={loading}>
             {loading ? "Testing API Call..." : "Test API Call"}
-          </Button>
+              </Button>
           
           {testResult && (
             <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
               {JSON.stringify(testResult, null, 2)}
             </pre>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
     </div>
   )
 }

@@ -382,13 +382,13 @@ export default function Dashboard() {
                                 {expense.group_name} • Paid by {expense.paid_by_name}
                               </p>
                             </div>
-                          </div>
+                      </div>
                           <div className="text-right">
                             <p className="font-bold text-on-surface dark:text-on-surface-dark">₹{expense.amount.toFixed(2)}</p>
                             <p className="text-sm text-on-surface-variant dark:text-on-surface-variant-dark">
                               {new Date(expense.date).toLocaleDateString()}
                             </p>
-                          </div>
+                      </div>
                         </div>
                       ))
                     ) : (
@@ -533,7 +533,7 @@ export default function Dashboard() {
                   </div>
                 </MaterialCardContent>
               </MaterialCard>
-            </div>
+                </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6 mt-8">
@@ -559,7 +559,7 @@ export default function Dashboard() {
                   <p className="text-on-surface-variant dark:text-on-surface-variant-dark">Charts coming soon</p>
                 </MaterialCardContent>
               </MaterialCard>
-            </div>
+                </div>
           </TabsContent>
         </Tabs>
       </div>

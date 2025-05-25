@@ -101,12 +101,12 @@ class ApiClient {
 
     try {
       const response = await fetch(url, {
-        ...options,
-        headers: {
-          ...headers,
-          ...options.headers,
-        },
-      })
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+    })
 
       console.log('📡 API Response:', {
         status: response.status,
@@ -114,11 +114,11 @@ class ApiClient {
         url: response.url
       })
 
-      if (!response.ok) {
-        const error = await response.json()
+    if (!response.ok) {
+      const error = await response.json()
         console.error('❌ API Error:', error)
-        throw new Error(error.message || "API request failed")
-      }
+      throw new Error(error.message || "API request failed")
+    }
 
       const data = await response.json()
       console.log('✅ API Success:', data)
