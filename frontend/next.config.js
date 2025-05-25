@@ -3,6 +3,10 @@ const nextConfig = {
   experimental: {
     appDir: true,
   },
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND: process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -10,16 +14,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["localhost"],
     unoptimized: true,
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/:path*`,
-      },
-    ]
   },
 }
 
