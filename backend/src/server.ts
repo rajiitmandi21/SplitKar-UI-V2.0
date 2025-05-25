@@ -1,63 +1,92 @@
-import dotenv from "dotenv"
+import express from "express"
+import cors from "cors"
+import helmet from "helmet"
 
-// Load environment variables first
-dotenv.config()
-
-import app from "./app"
-import { db } from "./config/database"
-import { logger } from "./utils/logger"
-
+const app = express()
 const PORT = process.env.PORT || 5000
 
-export async function startServer() {
-  try {
-    logger.info("🚀 Starting SplitKar Backend Server...")
+// Middleware
+app.use(helmet())
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  }),
+)
+app.use(express.json())
 
-    // Validate environment variables
-    if (!process.env.DATABASE_URL) {
-      logger.error("❌ DATABASE_URL environment variable is required")
-      process.exit(1)
-    }
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  })
+})
 
-    // Wait a moment for database connection to establish
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+// Basic auth endpoint for testing
+app.post("/api/auth/register", (req, res) => {
+  const { name, email, password } = req.body
 
-    // Test database connection
-    logger.info("🔍 Testing database connection...")
-    await db.query("SELECT NOW() as server_time")
-    logger.info("✅ Database connection verified")
-
-    app.listen(PORT, () => {
-      logger.info("🚀 Server started successfully", {
-        port: PORT,
-        environment: process.env.NODE_ENV || "development",
-        healthCheck: `http://localhost:${PORT}/health`,
-        apiBase: `http://localhost:${PORT}/api`,
-      })
+  // Simple validation
+  if (!name || !email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields",
     })
-  } catch (error) {
-    logger.error("❌ Failed to start server", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-    process.exit(1)
   }
+
+  // In a real app, you would save to database here
+  console.log("Registration attempt:", { name, email })
+
+  // Return success response
+  res.status(201).json({
+    success: true,
+    message: "User registered successfully",
+    user: { id: "temp-id-123", name, email },
+  })
+})
+
+// Login endpoint for testing
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body
+
+  // Simple validation
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing email or password",
+    })
+  }
+
+  // In a real app, you would verify credentials here
+  console.log("Login attempt:", { email })
+
+  // Return mock token
+  res.status(200).json({
+    success: true,
+    message: "Login successful",
+    token: "mock-jwt-token-123",
+    user: { id: "temp-id-123", name: "Test User", email },
+  })
+})
+
+// Start server function
+export async function startServer() {
+  return new Promise<void>((resolve) => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`)
+      console.log(`📊 Health check: http://localhost:${PORT}/health`)
+      console.log(`🔗 API base URL: http://localhost:${PORT}/api`)
+      resolve()
+    })
+  })
 }
 
-// Graceful shutdown
-process.on("SIGTERM", async () => {
-  logger.info("SIGTERM received, shutting down gracefully")
-  await db.close()
-  process.exit(0)
-})
-
-process.on("SIGINT", async () => {
-  logger.info("SIGINT received, shutting down gracefully")
-  await db.close()
-  process.exit(0)
-})
-
-// Only start server if this file is run directly
+// Direct execution
 if (require.main === module) {
-  startServer()
+  startServer().catch((error) => {
+    console.error("Failed to start server:", error)
+    process.exit(1)
+  })
 }
