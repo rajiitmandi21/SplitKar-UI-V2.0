@@ -1,72 +1,148 @@
 import { Pool, type PoolClient } from "pg"
 import { logger } from "../utils/logger"
 
-let dbInstance: Database;
-
 class Database {
   private pool: Pool
   private isConnected = false
 
-  constructor(databaseUrl: string) {
-    // Validate DATABASE_URL format
-    logger.info("Full DATABASE_URL:", databaseUrl) // Add debug log to see full URL
+  constructor() {
+    // Load environment variables
+    const databaseUrl = process.env.DATABASE_URL
+
     if (!databaseUrl) {
-      // logger.info("process.env.DATABASE_URL is ",(process.env.DATABASE_URL))
+      logger.error("❌ DATABASE_URL environment variable is required")
       throw new Error("DATABASE_URL environment variable is required")
     }
 
-    // Validate URL format: postgres://user:pwd@host.com:port/xyz?sslmode=require
-    const urlPattern = /^postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)(\?.*)?$/
-    if (!urlPattern.test(databaseUrl)) {
-      throw new Error("DATABASE_URL must be in format: postgres://user:pwd@host.com:port/xyz?sslmode=require")
+    logger.info("🔗 Initializing database connection...", {
+      url: databaseUrl.replace(/:[^:@]*@/, ":****@"), // Hide password in logs
+    })
+
+    // Parse connection string for validation
+    try {
+      const url = new URL(databaseUrl)
+      logger.info("📊 Database connection details", {
+        host: url.hostname,
+        port: url.port || "5432",
+        database: url.pathname.slice(1),
+        user: url.username,
+        ssl: databaseUrl.includes("sslmode=require") ? "required" : "disabled",
+      })
+    } catch (error) {
+      logger.error("❌ Invalid DATABASE_URL format", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      })
+      throw new Error("Invalid DATABASE_URL format. Expected: postgres://user:password@host:port/database")
     }
 
-    logger.info("🔗 Connecting to database...")
-    // logger.info("🔍 DATABASE_URL:", databaseUrl ? databaseUrl.substring(0, 5) + '...' : 'Not set')
-    // logger.info("Full DATABASE_URL:", databaseUrl) // Add debug log to see full URL
-
+    // Configure connection pool
     this.pool = new Pool({
       connectionString: databaseUrl,
       ssl: databaseUrl.includes("sslmode=require") ? { rejectUnauthorized: false } : false,
       max: 20, // Maximum number of clients in the pool
       idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+      connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
+      acquireTimeoutMillis: 60000, // Return an error after 60 seconds if unable to acquire a connection
     })
 
-    this.pool.on("connect", () => {
-      logger.info("✅ Database client connected")
+    // Pool event handlers
+    this.pool.on("connect", (client) => {
+      logger.info("✅ Database client connected", {
+        totalCount: this.pool.totalCount,
+        idleCount: this.pool.idleCount,
+      })
       this.isConnected = true
     })
 
     this.pool.on("error", (err: Error) => {
-      logger.error("❌ Unexpected error on idle client", { error: err.message, stack: err.stack })
+      logger.error("❌ Unexpected error on idle client", {
+        error: err.message,
+        stack: err.stack,
+        code: (err as any).code,
+      })
       this.isConnected = false
     })
 
-    // Test the connection
+    this.pool.on("remove", () => {
+      logger.debug("🔌 Database client removed from pool")
+    })
+
+    // Test the connection immediately
     this.testConnection()
   }
 
   private async testConnection(): Promise<void> {
-    try {
-      const client = await this.pool.connect()
-      const result = await client.query("SELECT NOW() as current_time, version() as pg_version")
-      logger.info("✅ Database connected successfully", {
-        serverTime: result.rows[0].current_time,
-        pgVersion: result.rows[0].pg_version.split(" ")[0],
-      })
-      client.release()
-      this.isConnected = true
-    } catch (error) {
-      logger.error("❌ Database connection failed", { error: error instanceof Error ? error.message : "Unknown error" })
-      this.isConnected = false
-      throw error
+    const maxRetries = 3
+    let retryCount = 0
+
+    while (retryCount < maxRetries) {
+      try {
+        logger.info(`🔍 Testing database connection (attempt ${retryCount + 1}/${maxRetries})...`)
+
+        const client = await this.pool.connect()
+        const result = await client.query(
+          "SELECT NOW() as current_time, version() as pg_version, current_database() as db_name",
+        )
+
+        logger.info("✅ Database connected successfully", {
+          serverTime: result.rows[0].current_time,
+          pgVersion: result.rows[0].pg_version.split(" ")[0],
+          database: result.rows[0].db_name,
+          poolStats: {
+            total: this.pool.totalCount,
+            idle: this.pool.idleCount,
+            waiting: this.pool.waitingCount,
+          },
+        })
+
+        client.release()
+        this.isConnected = true
+        return
+      } catch (error) {
+        retryCount++
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
+        const errorCode = (error as any)?.code
+
+        logger.error(`❌ Database connection failed (attempt ${retryCount}/${maxRetries})`, {
+          error: errorMessage,
+          code: errorCode,
+          hint: this.getConnectionHint(errorCode),
+        })
+
+        if (retryCount >= maxRetries) {
+          this.isConnected = false
+          throw new Error(`Failed to connect to database after ${maxRetries} attempts: ${errorMessage}`)
+        }
+
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, 2000 * retryCount))
+      }
+    }
+  }
+
+  private getConnectionHint(errorCode: string): string {
+    switch (errorCode) {
+      case "ECONNREFUSED":
+        return "Database server is not running or not accessible"
+      case "ENOTFOUND":
+        return "Database host not found - check hostname"
+      case "ECONNRESET":
+        return "Connection was reset - check network or firewall"
+      case "28P01":
+        return "Invalid username or password"
+      case "3D000":
+        return "Database does not exist"
+      case "28000":
+        return "Invalid authorization specification"
+      default:
+        return "Check your DATABASE_URL and ensure PostgreSQL is running"
     }
   }
 
   async query(text: string, params?: any[]): Promise<any> {
     if (!this.isConnected) {
-      throw new Error("Database not connected")
+      logger.warn("⚠️ Database not connected, attempting to reconnect...")
+      await this.testConnection()
     }
 
     const start = Date.now()
@@ -103,6 +179,7 @@ class Database {
       logger.error("❌ Database query error", {
         queryId,
         error: error instanceof Error ? error.message : "Unknown error",
+        code: (error as any)?.code,
         query: text.substring(0, 100),
         params: params ? params.length : 0,
       })
@@ -111,18 +188,29 @@ class Database {
   }
 
   async getClient(): Promise<PoolClient> {
+    if (!this.isConnected) {
+      await this.testConnection()
+    }
     return await this.pool.connect()
   }
 
   async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
-    const client = await this.pool.connect()
+    const client = await this.getClient()
     try {
       await client.query("BEGIN")
+      logger.debug("🔄 Transaction started")
+
       const result = await callback(client)
+
       await client.query("COMMIT")
+      logger.debug("✅ Transaction committed")
+
       return result
     } catch (error) {
       await client.query("ROLLBACK")
+      logger.error("🔄 Transaction rolled back", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      })
       throw error
     } finally {
       client.release()
@@ -145,7 +233,8 @@ class Database {
           current_database() as database_name,
           current_user as user_name,
           version() as version,
-          NOW() as current_time
+          NOW() as current_time,
+          pg_database_size(current_database()) as db_size
       `)
       client.release()
 
@@ -157,13 +246,16 @@ class Database {
           user: result.rows[0].user_name,
           version: result.rows[0].version.split(" ")[0],
           timestamp: result.rows[0].current_time,
-          pool_total: this.pool.totalCount,
-          pool_idle: this.pool.idleCount,
-          pool_waiting: this.pool.waitingCount,
+          databaseSize: result.rows[0].db_size,
+          pool: {
+            total: this.pool.totalCount,
+            idle: this.pool.idleCount,
+            waiting: this.pool.waitingCount,
+          },
         },
       }
 
-      logger.debug("📊 Database health check", healthData.details)
+      logger.debug("📊 Database health check passed", healthData.details)
       return healthData
     } catch (error) {
       const healthData = {
@@ -171,6 +263,7 @@ class Database {
         details: {
           connected: false,
           error: error instanceof Error ? error.message : "Unknown error",
+          code: (error as any)?.code,
           timestamp: new Date().toISOString(),
         },
       }
@@ -191,49 +284,37 @@ class Database {
   }
 }
 
-// Function to connect to the database and get the instance
-export const connectDB = async (): Promise<Database> => {
-  if (!dbInstance) {
-    console.log('DEBUG: process.env.DATABASE_URL inside connectDB BEFORE new Database:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(5, 10) + '...' : 'Not set');
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      throw new Error("DATABASE_URL environment variable is required in connectDB");
-    }
-    dbInstance = new Database(databaseUrl);
-    console.log('DEBUG: process.env.DATABASE_URL inside connectDB AFTER new Database:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(5, 10) + '...' : 'Not set');
-    // The testConnection is already called in the constructor
-  }
-  return dbInstance;
-};
+// Create and export database instance
+export const db = new Database()
 
-// Helper function to get the database instance after connecting
-export const getDB = (): Database => {
-  if (!dbInstance) {
-    throw new Error("Database not connected. Call connectDB first.");
-  }
-  return dbInstance;
-};
-
-// The connectDatabase function seems redundant now, remove it or adapt it.
-// For now, let's adapt it to call connectDB.
+// Export connection function for app.ts
 export const connectDatabase = async (): Promise<void> => {
-  await connectDB();
-  logger.info("Database connection initialized via connectDatabase")
-};
+  logger.info("🚀 Database connection initialized")
+}
 
-// Graceful shutdown
+// Graceful shutdown handlers
 process.on("SIGINT", async () => {
   logger.info("🛑 Received SIGINT, closing database connection...")
-  if (dbInstance) {
-    await dbInstance.close();
+  try {
+    await db.close()
+    process.exit(0)
+  } catch (error) {
+    logger.error("❌ Error during graceful shutdown", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    })
+    process.exit(1)
   }
-  process.exit(0)
 })
 
 process.on("SIGTERM", async () => {
   logger.info("🛑 Received SIGTERM, closing database connection...")
-  if (dbInstance) {
-    await dbInstance.close();
+  try {
+    await db.close()
+    process.exit(0)
+  } catch (error) {
+    logger.error("❌ Error during graceful shutdown", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    })
+    process.exit(1)
   }
-  process.exit(0)
 })
