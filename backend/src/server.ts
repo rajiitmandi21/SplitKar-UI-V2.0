@@ -1,6 +1,12 @@
+import dotenv from "dotenv"
+
+// Load environment variables first
+dotenv.config()
+
 import express from "express"
 import cors from "cors"
 import helmet from "helmet"
+import { logger } from "./utils/logger"
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -21,6 +27,7 @@ app.get("/health", (req, res) => {
     status: "healthy",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    port: PORT,
   })
 })
 
@@ -37,7 +44,7 @@ app.post("/api/auth/register", (req, res) => {
   }
 
   // In a real app, you would save to database here
-  console.log("Registration attempt:", { name, email })
+  logger.info("Registration attempt:", { name, email })
 
   // Return success response
   res.status(201).json({
@@ -60,7 +67,7 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   // In a real app, you would verify credentials here
-  console.log("Login attempt:", { email })
+  logger.info("Login attempt:", { email })
 
   // Return mock token
   res.status(200).json({
@@ -71,22 +78,63 @@ app.post("/api/auth/login", (req, res) => {
   })
 })
 
-// Start server function
+// Test email endpoint
+app.post("/api/test/send-email", (req, res) => {
+  const { email } = req.body
+
+  logger.info("Test email request:", { email })
+
+  // Mock email sending for now
+  res.json({
+    success: true,
+    message: "Test email sent successfully",
+    verificationUrl: `http://localhost:3000/auth/verify?token=test-token-123`,
+  })
+})
+
+// Start server function with better error handling
 export async function startServer() {
-  return new Promise<void>((resolve) => {
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`)
-      console.log(`📊 Health check: http://localhost:${PORT}/health`)
-      console.log(`🔗 API base URL: http://localhost:${PORT}/api`)
+  return new Promise<void>((resolve, reject) => {
+    const server = app.listen(PORT, () => {
+      logger.info("🚀 Server started successfully", {
+        port: PORT,
+        environment: process.env.NODE_ENV || "development",
+        healthCheck: `http://localhost:${PORT}/health`,
+        apiBase: `http://localhost:${PORT}/api`,
+      })
       resolve()
+    })
+
+    server.on("error", (error: any) => {
+      if (error.code === "EADDRINUSE") {
+        logger.error(`❌ Port ${PORT} is already in use`, {
+          port: PORT,
+          suggestion: "Try running: lsof -ti:5000 | xargs kill -9",
+        })
+        reject(new Error(`Port ${PORT} is already in use`))
+      } else {
+        logger.error("❌ Failed to start server", { error: error.message })
+        reject(error)
+      }
     })
   })
 }
 
-// Direct execution
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  logger.info("SIGTERM received, shutting down gracefully")
+  process.exit(0)
+})
+
+process.on("SIGINT", async () => {
+  logger.info("SIGINT received, shutting down gracefully")
+  process.exit(0)
+})
+
+// Only start server if this file is run directly
 if (require.main === module) {
   startServer().catch((error) => {
-    console.error("Failed to start server:", error)
+    console.error("Failed to start server:", error.message)
     process.exit(1)
   })
 }
