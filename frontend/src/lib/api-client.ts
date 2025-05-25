@@ -1,4 +1,4 @@
-import { mockApiClient } from "./mock-api-client"
+import { MockApiClient } from "./mock-api-client"
 import * as serverActions from "./server-actions"
 
 interface ApiResponse<T = any> {
@@ -182,7 +182,7 @@ function createApiClient() {
 
   if (useMockData) {
     console.log("🎭 Using Mock API Client for frontend testing")
-    return mockApiClient
+    return new MockApiClient()
   } else {
     console.log("🌐 Using Real API Client with Server Actions")
     return new RealApiClient()

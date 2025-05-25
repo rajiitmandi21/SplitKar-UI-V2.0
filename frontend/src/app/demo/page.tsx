@@ -11,40 +11,73 @@ import Link from "next/link"
 // Define types for mock data
 interface MockUser {
   id: string
-  name: string
   email: string
-  balance: number
-  upiId: string
+  name: string
+  phone?: string
+  avatar_url?: string
   role: string
-  isVerified: boolean
+  is_verified: boolean
+  created_at: string
+  stats: {
+    total_groups: number
+    total_friends: number
+    total_expenses: number
+    net_balance: number
+  }
 }
 
 interface MockGroup {
   id: string
   name: string
-  description: string
-  memberIds: string[]
-  totalExpenses: number
-  createdAt: string
-  category: string
+  description?: string
+  icon?: string
+  color?: string
+  currency?: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  member_count: number
+  total_expenses: number
+  user_balance: number
+  members: {
+    user_id: string;
+    role: string;
+    joined_at: string;
+  }[];
 }
 
 interface MockExpense {
   id: string
-  description: string
-  paidBy: string
+  group_id: string
+  created_by: string
+  title: string
+  description?: string
   amount: number
-  category: string
-  splitType: string
+  currency?: string
+  category?: string
   date: string
-  participants: string[]
+  created_at: string
+  updated_at: string
+  split_type: string
+  participants: {
+    user_id: string;
+    amount?: number;
+    percentage?: number;
+  }[];
 }
 
 interface MockFriend {
   id: string
-  friendId: string
+  user_id: string
+  friend_id: string
   status: string
-  createdAt: string
+  created_at: string
+  friend_details: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
 }
 
 export default function DemoPage() {
@@ -71,10 +104,10 @@ export default function DemoPage() {
         ])
 
         setMockData({
-          users: usersRes.default || [],
-          groups: groupsRes.default || [],
-          expenses: expensesRes.default || [],
-          friends: friendsRes.default || [],
+          users: usersRes.default?.users || [],
+          groups: groupsRes.default?.groups || [],
+          expenses: expensesRes.default?.expenses || [],
+          friends: friendsRes.default?.friends || [],
         })
       } catch (error) {
         console.error("Failed to load mock data:", error)
@@ -157,13 +190,13 @@ export default function DemoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Balance:</span>
-                      <span className={user.balance >= 0 ? "text-green-600" : "text-red-600"}>
-                        ₹{Math.abs(user.balance).toFixed(2)}
+                      <span className={user.stats.net_balance >= 0 ? "text-green-600" : "text-red-600"}>
+                        ₹{Math.abs(user.stats.net_balance).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>UPI ID:</span>
-                      <span className="text-sm text-muted-foreground">{user.upiId}</span>
+                      <span>Phone:</span>
+                      <span className="text-sm text-muted-foreground">{user.phone || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Role:</span>
@@ -171,8 +204,8 @@ export default function DemoPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Status:</span>
-                      <Badge variant={user.isVerified ? "default" : "destructive"}>
-                        {user.isVerified ? "Verified" : "Unverified"}
+                      <Badge variant={user.is_verified ? "default" : "destructive"}>
+                        {user.is_verified ? "Verified" : "Unverified"}
                       </Badge>
                     </div>
                     <Link href="/auth/login">
@@ -207,21 +240,18 @@ export default function DemoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Members:</span>
-                      <span>{group.memberIds.length}</span>
+                      <span>{group.member_count}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Expenses:</span>
-                      <span>₹{group.totalExpenses.toFixed(2)}</span>
+                      <span>₹{group.total_expenses.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Created:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(group.createdAt).toLocaleDateString()}
+                        {new Date(group.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <Badge variant="outline" className="w-fit">
-                      {group.category}
-                    </Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -240,15 +270,17 @@ export default function DemoPage() {
                         <Receipt className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{expense.description}</CardTitle>
+                        <CardTitle className="text-lg">{expense.title}</CardTitle>
                         <CardDescription>
-                          Paid by {users.find((u) => u.id === expense.paidBy)?.name || "Unknown"}
+                          Paid by {users.find((u) => u.id === expense.created_by)?.name || "Unknown"}
                         </CardDescription>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold">₹{expense.amount.toFixed(2)}</div>
-                      <Badge variant="outline">{expense.category}</Badge>
+                      {expense.category && (
+                        <Badge variant="outline">{expense.category}</Badge>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -256,7 +288,7 @@ export default function DemoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Split Type:</span>
-                      <Badge variant="secondary">{expense.splitType}</Badge>
+                      <Badge variant="secondary">{expense.split_type}</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Date:</span>
@@ -286,10 +318,10 @@ export default function DemoPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {users.find((u) => u.id === friendship.friendId)?.name || "Unknown"}
+                        {friendship.friend_details?.name || "Unknown"}
                       </CardTitle>
                       <CardDescription>
-                        {users.find((u) => u.id === friendship.friendId)?.email || "No email"}
+                        {friendship.friend_details?.email || "No email"}
                       </CardDescription>
                     </div>
                   </div>
@@ -305,7 +337,7 @@ export default function DemoPage() {
                     <div className="flex justify-between">
                       <span>Since:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(friendship.createdAt).toLocaleDateString()}
+                        {new Date(friendship.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

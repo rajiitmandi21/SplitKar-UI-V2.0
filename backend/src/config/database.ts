@@ -1,14 +1,17 @@
 import { Pool, type PoolClient } from "pg"
 import { logger } from "../utils/logger"
 
+let dbInstance: Database;
+
 class Database {
   private pool: Pool
   private isConnected = false
 
-  constructor() {
+  constructor(databaseUrl: string) {
     // Validate DATABASE_URL format
-    const databaseUrl = process.env.DATABASE_URL
+    logger.info("Full DATABASE_URL:", databaseUrl) // Add debug log to see full URL
     if (!databaseUrl) {
+      // logger.info("process.env.DATABASE_URL is ",(process.env.DATABASE_URL))
       throw new Error("DATABASE_URL environment variable is required")
     }
 
@@ -19,6 +22,8 @@ class Database {
     }
 
     logger.info("🔗 Connecting to database...")
+    // logger.info("🔍 DATABASE_URL:", databaseUrl ? databaseUrl.substring(0, 5) + '...' : 'Not set')
+    // logger.info("Full DATABASE_URL:", databaseUrl) // Add debug log to see full URL
 
     this.pool = new Pool({
       connectionString: databaseUrl,
@@ -186,24 +191,49 @@ class Database {
   }
 }
 
-// Create and export database instance
-export const db = new Database()
+// Function to connect to the database and get the instance
+export const connectDB = async (): Promise<Database> => {
+  if (!dbInstance) {
+    console.log('DEBUG: process.env.DATABASE_URL inside connectDB BEFORE new Database:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(5, 10) + '...' : 'Not set');
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error("DATABASE_URL environment variable is required in connectDB");
+    }
+    dbInstance = new Database(databaseUrl);
+    console.log('DEBUG: process.env.DATABASE_URL inside connectDB AFTER new Database:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(5, 10) + '...' : 'Not set');
+    // The testConnection is already called in the constructor
+  }
+  return dbInstance;
+};
 
-// Export connection function for app.ts
+// Helper function to get the database instance after connecting
+export const getDB = (): Database => {
+  if (!dbInstance) {
+    throw new Error("Database not connected. Call connectDB first.");
+  }
+  return dbInstance;
+};
+
+// The connectDatabase function seems redundant now, remove it or adapt it.
+// For now, let's adapt it to call connectDB.
 export const connectDatabase = async (): Promise<void> => {
-  // Database connection is initialized in constructor
-  logger.info("Database connection initialized")
-}
+  await connectDB();
+  logger.info("Database connection initialized via connectDatabase")
+};
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
   logger.info("🛑 Received SIGINT, closing database connection...")
-  await db.close()
+  if (dbInstance) {
+    await dbInstance.close();
+  }
   process.exit(0)
 })
 
 process.on("SIGTERM", async () => {
   logger.info("🛑 Received SIGTERM, closing database connection...")
-  await db.close()
+  if (dbInstance) {
+    await dbInstance.close();
+  }
   process.exit(0)
 })
