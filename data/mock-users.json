@@ -1,0 +1,86 @@
+{
+  "users": [
+    {
+      "id": "user-1",
+      "email": "john.doe@example.com",
+      "name": "John Doe",
+      "phone": "+1-555-0101",
+      "avatar_url": "https://ui-avatars.com/api/?name=John+Doe&background=10B981&color=fff",
+      "role": "user",
+      "is_verified": true,
+      "created_at": "2024-01-15T10:30:00Z",
+      "stats": {
+        "total_groups": 3,
+        "total_friends": 8,
+        "total_expenses": 12,
+        "net_balance": 150.75
+      }
+    },
+    {
+      "id": "user-2",
+      "email": "jane.smith@example.com",
+      "name": "Jane Smith",
+      "phone": "+1-555-0102",
+      "avatar_url": "https://ui-avatars.com/api/?name=Jane+Smith&background=3B82F6&color=fff",
+      "role": "user",
+      "is_verified": true,
+      "created_at": "2024-01-20T14:15:00Z",
+      "stats": {
+        "total_groups": 2,
+        "total_friends": 6,
+        "total_expenses": 8,
+        "net_balance": -45.25
+      }
+    },
+    {
+      "id": "user-3",
+      "email": "sarah.johnson@example.com",
+      "name": "Sarah Johnson",
+      "phone": "+1-555-0103",
+      "avatar_url": "https://ui-avatars.com/api/?name=Sarah+Johnson&background=8B5CF6&color=fff",
+      "role": "admin",
+      "is_verified": true,
+      "created_at": "2024-01-10T09:00:00Z",
+      "stats": {
+        "total_groups": 5,
+        "total_friends": 15,
+        "total_expenses": 25,
+        "net_balance": 320.5
+      }
+    },
+    {
+      "id": "user-4",
+      "email": "mike.wilson@example.com",
+      "name": "Mike Wilson",
+      "phone": "+1-555-0104",
+      "avatar_url": "https://ui-avatars.com/api/?name=Mike+Wilson&background=F59E0B&color=fff",
+      "role": "user",
+      "is_verified": false,
+      "created_at": "2024-02-01T16:45:00Z",
+      "stats": {
+        "total_groups": 1,
+        "total_friends": 3,
+        "total_expenses": 2,
+        "net_balance": 25.0
+      }
+    }
+  ],
+  "credentials": [
+    {
+      "email": "john.doe@example.com",
+      "password": "password123"
+    },
+    {
+      "email": "jane.smith@example.com",
+      "password": "password123"
+    },
+    {
+      "email": "sarah.johnson@example.com",
+      "password": "admin123"
+    },
+    {
+      "email": "mike.wilson@example.com",
+      "password": "password123"
+    }
+  ]
+} 

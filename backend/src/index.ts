@@ -45,6 +45,13 @@ app.post("/api/auth/register", (req, res) => {
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body
 
+  console.log("🔐 Login request received:", {
+    email,
+    password: password ? "[PROVIDED]" : "[MISSING]",
+    headers: req.headers,
+    origin: req.headers.origin
+  })
+
   res.json({
     success: true,
     message: "Login successful!",
@@ -55,6 +62,71 @@ app.post("/api/auth/login", (req, res) => {
       email,
       verified: true,
     },
+  })
+})
+
+app.post("/api/auth/verify-email", (req, res) => {
+  const { token } = req.body
+
+  console.log("📧 Email Verification (Development Mode):")
+  console.log("Token:", token)
+  console.log("Verification successful!")
+  console.log("---")
+
+  res.json({
+    success: true,
+    message: "Email verified successfully!",
+    user: {
+      id: "mock-user-id",
+      verified: true,
+    },
+  })
+})
+
+app.get("/api/auth/profile", (req, res) => {
+  res.json({
+    success: true,
+    user: {
+      id: "mock-user-id",
+      name: "Test User",
+      email: "test@example.com",
+      phone: "+91 9876543210",
+      avatar_url: "/placeholder.svg",
+      role: "user",
+      is_verified: true,
+      created_at: new Date().toISOString(),
+      upi_id: "test@upi"
+    },
+    stats: {
+      total_groups: 3,
+      total_friends: 8,
+      total_expenses: 15,
+      net_balance: 250.50
+    }
+  })
+})
+
+app.put("/api/auth/profile", (req, res) => {
+  const updates = req.body
+  
+  console.log("📝 Profile Update (Development Mode):")
+  console.log("Updates:", updates)
+  console.log("---")
+
+  res.json({
+    success: true,
+    message: "Profile updated successfully!",
+    user: {
+      id: "mock-user-id",
+      name: updates.name || "Test User",
+      email: updates.email || "test@example.com",
+      phone: updates.phone || "+91 9876543210",
+      avatar_url: updates.avatar_url || "/placeholder.svg",
+      role: "user",
+      is_verified: true,
+      created_at: new Date().toISOString(),
+      upi_id: updates.upi_id || "test@upi"
+    }
   })
 })
 

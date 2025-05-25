@@ -10,6 +10,7 @@ import { validateApiKey, createApiKeyRateLimit, logApiKeyUsage } from "./middlew
 // Import routes
 import authRoutes from "./routes/auth"
 import groupRoutes from "./routes/groups"
+import dashboardRoutes from "./routes/dashboard"
 import testRoutes from "./routes/test"
 
 const app = express()
@@ -58,6 +59,7 @@ app.get("/health", (req, res) => {
 app.use("/api", validateApiKey, createApiKeyRateLimit(), logApiKeyUsage)
 app.use("/api/auth", authRoutes)
 app.use("/api/groups", groupRoutes)
+app.use("/api/dashboard", dashboardRoutes)
 app.use("/api/test", testRoutes)
 
 // 404 handler

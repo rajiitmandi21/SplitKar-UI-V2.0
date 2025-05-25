@@ -76,7 +76,8 @@ export class AuthController {
 
       logger.info("📧 Verification email sent", { requestId, userId: user.id })
 
-      res.status(201).json({
+      // In development mode, include the verification link in the response
+      const response: any = {
         message: "User registered successfully. Please check your email to verify your account.",
         user: {
           id: user.id,
@@ -87,7 +88,15 @@ export class AuthController {
           role: user.role,
           is_verified: user.is_verified,
         },
-      })
+      }
+
+      // Add verification link in development mode
+      if (process.env.NODE_ENV !== "production") {
+        response.dev_verification_link = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/verify?token=${user.verification_token}`
+        response.dev_note = "In development mode: Use the verification link above to verify your account"
+      }
+
+      res.status(201).json(response)
     } catch (error) {
       logger.error("❌ Registration error", {
         requestId,

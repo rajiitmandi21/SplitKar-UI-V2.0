@@ -1,352 +1,312 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
 {
-  "rules":[
-    {
-      "pattern": "**/.env*",
+  "rules": [
+    // === SECURITY-FIRST: Block sensitive files (processed first) ===
+    { 
+      "pattern": "**/.env*", 
       "context": "block",
       "comment": "Environment variables with API keys and secrets"
     },
-    {
-      "pattern": "**/*.key",
+    { 
+      "pattern": "**/*.key", 
       "context": "block",
       "comment": "Private keys and certificates"
     },
-    {
-      "pattern": "**/*.pem",
+    { 
+      "pattern": "**/*.pem", 
       "context": "block",
       "comment": "SSL certificates and private keys"
     },
-    {
-      "pattern": "**/secrets/**",
+    { 
+      "pattern": "**/secrets/**", 
       "context": "block",
       "comment": "Secret management directories"
     },
-    {
-      "pattern": "**/credentials/**",
+    { 
+      "pattern": "**/credentials/**", 
       "context": "block",
       "comment": "Authentication credentials"
     },
-    {
-      "pattern": "**/*.log",
+    { 
+      "pattern": "**/*.log", 
       "context": "block",
       "comment": "Log files may contain sensitive data"
     },
-    {
-      "pattern": "app/**/*.{ts,tsx}",
-      "context": "include",
+
+    // === HIGH PRIORITY: Core application code ===
+    { 
+      "pattern": "app/**/*.{ts,tsx}", 
+      "context": "include", 
       "priority": 1,
       "comment": "Next.js App Router pages and layouts - core frontend"
     },
-    {
-      "pattern": "components/**/*.{ts,tsx}",
-      "context": "include",
+    { 
+      "pattern": "components/**/*.{ts,tsx}", 
+      "context": "include", 
       "priority": 1,
       "comment": "React components - UI building blocks"
     },
-    {
-      "pattern": "backend/src/**/*.{ts,js}",
-      "context": "include",
+    { 
+      "pattern": "backend/src/**/*.{ts,js}", 
+      "context": "include", 
       "priority": 1,
       "comment": "Backend API logic and services"
     },
-    {
-      "pattern": "lib/**/*.{ts,js}",
-      "context": "include",
+    { 
+      "pattern": "lib/**/*.{ts,js}", 
+      "context": "include", 
       "priority": 1,
       "comment": "Shared utilities and core business logic"
     },
-    {
-      "pattern": "utils/**/*.{ts,js}",
-      "context": "include",
+
+    // === MEDIUM PRIORITY: Supporting code and configuration ===
+    { 
+      "pattern": "utils/**/*.{ts,js}", 
+      "context": "include", 
       "priority": 0.8,
       "comment": "Helper functions and utilities"
     },
-    {
-      "pattern": "types/**/*.{ts,d.ts}",
-      "context": "include",
+    { 
+      "pattern": "types/**/*.{ts,d.ts}", 
+      "context": "include", 
       "priority": 0.8,
       "comment": "TypeScript type definitions"
     },
-    {
-      "pattern": "hooks/**/*.{ts,tsx}",
-      "context": "include",
+    { 
+      "pattern": "hooks/**/*.{ts,tsx}", 
+      "context": "include", 
       "priority": 0.8,
       "comment": "Custom React hooks"
     },
-    {
-      "pattern": "backend/src/**/*.sql",
-      "context": "include",
+    { 
+      "pattern": "backend/src/**/*.sql", 
+      "context": "include", 
       "priority": 0.7,
       "comment": "Database schemas and migrations"
     },
-    {
-      "pattern": "docs/**/*.md",
-      "context": "include",
+
+    // === DOCUMENTATION: Essential for context ===
+    { 
+      "pattern": "docs/**/*.md", 
+      "context": "include", 
       "priority": 0.9,
       "comment": "Project documentation and guides"
     },
-    {
-      "pattern": "README.md",
-      "context": "include",
+    { 
+      "pattern": "README.md", 
+      "context": "include", 
       "priority": 1,
       "comment": "Main project documentation"
     },
-    {
-      "pattern": "CHANGELOG.md",
-      "context": "include",
+    { 
+      "pattern": "CHANGELOG.md", 
+      "context": "include", 
       "priority": 0.6,
       "comment": "Version history and changes"
     },
-    {
-      "pattern": "package.json",
-      "context": "include",
+
+    // === CONFIGURATION: Important for understanding setup ===
+    { 
+      "pattern": "package.json", 
+      "context": "include", 
       "priority": 0.9,
       "comment": "Dependencies and scripts"
     },
-    {
-      "pattern": "tsconfig.json",
-      "context": "include",
+    { 
+      "pattern": "tsconfig.json", 
+      "context": "include", 
       "priority": 0.8,
       "comment": "TypeScript configuration"
     },
-    {
-      "pattern": "tailwind.config.{js,ts}",
-      "context": "include",
+    { 
+      "pattern": "tailwind.config.{js,ts}", 
+      "context": "include", 
       "priority": 0.7,
       "comment": "Tailwind CSS configuration"
     },
-    {
-      "pattern": "next.config.{js,mjs}",
-      "context": "include",
+    { 
+      "pattern": "next.config.{js,mjs}", 
+      "context": "include", 
       "priority": 0.7,
       "comment": "Next.js configuration"
     },
-    {
-      "pattern": ".cursorrules",
-      "context": "include",
+    { 
+      "pattern": ".cursorrules", 
+      "context": "include", 
       "priority": 0.5,
       "comment": "AI context rules for this project"
     },
-    {
-      "pattern": "**/*.test.{ts,tsx,js,jsx}",
+
+    // === EXCLUDE: Test files (reduce noise but allow manual reference) ===
+    { 
+      "pattern": "**/*.test.{ts,tsx,js,jsx}", 
       "context": "exclude",
       "comment": "Unit and integration tests"
     },
-    {
-      "pattern": "**/*.spec.{ts,tsx,js,jsx}",
+    { 
+      "pattern": "**/*.spec.{ts,tsx,js,jsx}", 
       "context": "exclude",
       "comment": "Test specifications"
     },
-    {
-      "pattern": "**/__tests__/**",
+    { 
+      "pattern": "**/__tests__/**", 
       "context": "exclude",
       "comment": "Test directories"
     },
-    {
-      "pattern": "**/test/**",
+    { 
+      "pattern": "**/test/**", 
       "context": "exclude",
       "comment": "Test utilities and fixtures"
     },
-    {
-      "pattern": "jest.config.*",
+    { 
+      "pattern": "jest.config.*", 
       "context": "exclude",
       "comment": "Jest testing configuration"
     },
-    {
-      "pattern": "cypress/**",
+    { 
+      "pattern": "cypress/**", 
       "context": "exclude",
       "comment": "End-to-end test files"
     },
-    {
-      "pattern": "node_modules/**",
+
+    // === EXCLUDE: Build artifacts and generated files ===
+    { 
+      "pattern": "node_modules/**", 
       "context": "exclude",
       "comment": "Third-party dependencies"
     },
-    {
-      "pattern": ".next/**",
+    { 
+      "pattern": ".next/**", 
       "context": "exclude",
       "comment": "Next.js build output"
     },
-    {
-      "pattern": "dist/**",
+    { 
+      "pattern": "dist/**", 
       "context": "exclude",
       "comment": "Distribution/build files"
     },
-    {
-      "pattern": "build/**",
+    { 
+      "pattern": "build/**", 
       "context": "exclude",
       "comment": "Build artifacts"
     },
-    {
-      "pattern": "out/**",
+    { 
+      "pattern": "out/**", 
       "context": "exclude",
       "comment": "Export output directory"
     },
-    {
-      "pattern": "coverage/**",
+    { 
+      "pattern": "coverage/**", 
       "context": "exclude",
       "comment": "Test coverage reports"
     },
-    {
-      "pattern": "**/*.min.{js,css}",
+    { 
+      "pattern": "**/*.min.{js,css}", 
       "context": "exclude",
       "comment": "Minified files"
     },
-    {
-      "pattern": ".cache/**",
+
+    // === EXCLUDE: Temporary and cache files ===
+    { 
+      "pattern": ".cache/**", 
       "context": "exclude",
       "comment": "Cache directories"
     },
-    {
-      "pattern": "tmp/**",
+    { 
+      "pattern": "tmp/**", 
       "context": "exclude",
       "comment": "Temporary files"
     },
-    {
-      "pattern": "temp/**",
+    { 
+      "pattern": "temp/**", 
       "context": "exclude",
       "comment": "Temporary directories"
     },
-    {
-      "pattern": "logs/**",
+    { 
+      "pattern": "logs/**", 
       "context": "exclude",
       "comment": "Application logs"
     },
-    {
-      "pattern": "**/*.tsbuildinfo",
+    { 
+      "pattern": "**/*.tsbuildinfo", 
       "context": "exclude",
       "comment": "TypeScript build cache"
     },
-    {
-      "pattern": ".vscode/**",
+
+    // === EXCLUDE: IDE and OS files ===
+    { 
+      "pattern": ".vscode/**", 
       "context": "exclude",
       "comment": "VS Code settings"
     },
-    {
-      "pattern": ".idea/**",
+    { 
+      "pattern": ".idea/**", 
       "context": "exclude",
       "comment": "IntelliJ IDEA settings"
     },
-    {
-      "pattern": ".DS_Store",
+    { 
+      "pattern": ".DS_Store", 
       "context": "exclude",
       "comment": "macOS system files"
     },
-    {
-      "pattern": "Thumbs.db",
+    { 
+      "pattern": "Thumbs.db", 
       "context": "exclude",
       "comment": "Windows system files"
     },
-    {
-      "pattern": ".git/**",
+
+    // === EXCLUDE: Version control and package manager files ===
+    { 
+      "pattern": ".git/**", 
       "context": "exclude",
       "comment": "Git repository data"
     },
-    {
-      "pattern": ".gitignore",
+    { 
+      "pattern": ".gitignore", 
       "context": "exclude",
       "comment": "Git ignore rules"
     },
-    {
-      "pattern": "package-lock.json",
+    { 
+      "pattern": "package-lock.json", 
       "context": "exclude",
       "comment": "NPM lock file"
     },
-    {
-      "pattern": "yarn.lock",
+    { 
+      "pattern": "yarn.lock", 
       "context": "exclude",
       "comment": "Yarn lock file"
     },
-    {
-      "pattern": "pnpm-lock.yaml",
+    { 
+      "pattern": "pnpm-lock.yaml", 
       "context": "exclude",
       "comment": "PNPM lock file"
     },
-    {
-      "pattern": ".*_backup\\..*$",
-      "context": "exclude",
+
+    // === REGEX PATTERNS: Advanced exclusions ===
+    { 
+      "pattern": ".*_backup\\.(js|ts|tsx)$", 
+      "context": "exclude", 
       "isRegex": true,
-      "comment": "Backup files with _backup suffix (any extension)"
+      "comment": "Backup files with _backup suffix"
     },
-    {
-      "pattern": ".*\\.old$",
-      "context": "exclude",
+    { 
+      "pattern": ".*\\.old$", 
+      "context": "exclude", 
       "isRegex": true,
       "comment": "Old files with .old extension"
-    },
-
-    {
-      "pattern": "frontend/src/**/*.{ts,tsx}",
-      "context": "include",
-      "priority": 1,
-      "comment": "Next.js frontend application source code (from frontend/src)"
-    },
-    {
-      "pattern": "frontend/public/**",
-      "context": "include",
-      "priority": 0.6,
-      "comment": "Static assets for frontend"
-    },
-    {
-      "pattern": "frontend/docs/**/*.md",
-      "context": "include",
-      "priority": 0.9,
-      "comment": "Frontend-specific documentation"
-    },
-    {
-      "pattern": "backend/db/**/*.sql",
-      "context": "include",
-      "priority": 0.7,
-      "comment": "Database migrations and seeds"
-    },
-    {
-      "pattern": "backend/docs/**/*.md",
-      "context": "include",
-      "priority": 0.9,
-      "comment": "Backend-specific documentation"
-    },
-    {
-      "pattern": "scripts/**/*.{js,ts,sh,py}",
-      "context": "include",
-      "priority": 0.7,
-      "comment": "Deployment and utility scripts"
-    },
-    {
-      "pattern": ".github/**/*.{yml,yaml}",
-      "context": "include",
-      "priority": 0.6,
-      "comment": "GitHub workflows and templates"
-    },
-    {
-      "pattern": ".eslintrc.{js,json,yaml,yml,cjs,mjs}",
-      "context": "include",
-      "priority": 0.7,
-      "comment": "ESLint configuration"
-    },
-    {
-      "pattern": "{prettier.config.{js,cjs,mjs},.prettierrc.{js,json,yaml,yml,toml}}",
-      "context": "include",
-      "priority": 0.7,
-      "comment": "Prettier configuration"
-    },
-    {
-      "pattern": ".husky/**",
-      "context": "include",
-      "priority": 0.6,
-      "comment": "Husky pre-commit hooks configuration"
-    },
-    {
-      "pattern": "LICENSE*",
-      "context": "include",
-      "priority": 0.5,
-      "comment": "Project license information"
     }
   ],
 
+  // === PROJECT CONTEXT: Rich metadata for AI understanding ===
   "context": {
     "project": "SplitKar - Expense Splitting Application",
     "version": "2.0",
     "description": "Full-stack TypeScript application for managing shared expenses with advanced splitting algorithms and real-time collaboration",
-
+    
     "architecture": {
       "frontend": {
         "framework": "Next.js 14+ with App Router",

@@ -227,18 +227,10 @@ export const db = {
 // Initialize database connection
 export const initializeDatabase = async (): Promise<void> => {
   try {
-    const connectionString = process.env.DATABASE_URL || "postgresql://localhost:5432/splitkar_dev"
-
-    pool = new Pool({
-      connectionString,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-    })
-
-    // Test the connection
-    const client = await pool.connect()
-    await client.query("SELECT NOW()")
-    client.release()
-
+    // Create database instance to initialize the connection
+    const database = new Database()
+    await database.testConnection()
+    
     logger.info("✅ Database connected successfully")
   } catch (error) {
     logger.error("❌ Database connection failed", { error })

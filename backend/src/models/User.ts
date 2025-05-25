@@ -53,10 +53,10 @@ export class UserModel {
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     const result = await db.query(
-      `INSERT INTO users (email, name, phone, upi_id, password_hash, role, verification_token, verification_token_expires)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO users (email, name, phone, upi_id, password_hash, role, verification_token)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [email, name, phone, upi_id, passwordHash, role, verificationToken, verificationExpires],
+      [email, name, phone, upi_id, passwordHash, role, verificationToken],
     )
 
     return result.rows[0]
@@ -80,8 +80,8 @@ export class UserModel {
   async verifyEmail(token: string): Promise<User | null> {
     const result = await db.query(
       `UPDATE users 
-       SET is_verified = true, verification_token = NULL, verification_token_expires = NULL, updated_at = NOW()
-       WHERE verification_token = $1 AND verification_token_expires > NOW()
+       SET is_verified = true, verification_token = NULL, updated_at = NOW()
+       WHERE verification_token = $1
        RETURNING *`,
       [token],
     )

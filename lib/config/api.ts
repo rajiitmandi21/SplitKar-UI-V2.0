@@ -4,7 +4,7 @@ export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api",
 
   // API Key for authentication
-  API_KEY: process.env.API_KEY || "",
+  API_KEY: process.env.NEXT_PUBLIC_API_KEY || "dev-api-key-123",
 
   // Request timeout in milliseconds
   TIMEOUT: 10000,
@@ -22,7 +22,9 @@ export const API_CONFIG = {
 export function buildApiUrl(endpoint: string): string {
   const baseUrl = API_CONFIG.BASE_URL.replace(/\/+$/, "") // Remove trailing slashes
   const cleanEndpoint = endpoint.replace(/^\/+/, "") // Remove leading slashes
-  return `${baseUrl}/${cleanEndpoint}`
+  const finalUrl = `${baseUrl}/${cleanEndpoint}`
+  console.log('🔗 Building API URL:', { baseUrl, cleanEndpoint, finalUrl, configBaseUrl: API_CONFIG.BASE_URL })
+  return finalUrl
 }
 
 // Helper to get auth headers
@@ -32,13 +34,13 @@ export function getApiHeaders(includeAuth = true): Record<string, string> {
   }
 
   // Add API key if available
-  if (process.env.API_KEY) {
-    headers["X-API-Key"] = process.env.API_KEY
+  if (API_CONFIG.API_KEY) {
+    headers["X-API-Key"] = API_CONFIG.API_KEY
   }
 
   // Add auth token if available and requested
   if (includeAuth && typeof window !== "undefined") {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("auth_token")
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
     }
