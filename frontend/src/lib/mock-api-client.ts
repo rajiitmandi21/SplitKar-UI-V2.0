@@ -1,254 +1,292 @@
-export class MockApiClient {
-  private currentUser = {
-    id: "mock-user-id",
-    email: "test@example.com",
-    firstName: "Test",
-    lastName: "User",
-    name: "Test User",
-    phone: "123-456-7890",
-    upi_id: "testuser@upi",
+// Mock API client for development/testing
+interface User {
+  id: string
+  email: string
+  name: string
+  phone?: string
+  avatar_url?: string
+  role: string
+  is_verified: boolean
+  created_at: string
+  stats: {
+    total_groups: number
+    total_friends: number
+    total_expenses: number
+    net_balance: number
+  }
+}
+
+interface Group {
+  id: string
+  name: string
+  description: string
+  member_count: number
+  total_expenses: number
+  user_balance: number
+  created_at: string
+}
+
+class MockApiClient {
+  private token: string | null = null
+  private currentUser: User | null = null
+
+  setToken(token: string | null) {
+    this.token = token
+    if (typeof window !== "undefined") {
+      if (token) {
+        localStorage.setItem("auth_token", token)
+      } else {
+        localStorage.removeItem("auth_token")
+      }
+    }
   }
 
-  private mockToken = "mock-auth-token"
+  clearToken() {
+    this.setToken(null)
+  }
 
-  private mockGroups = [
-    {
-      id: "mock-group-1",
-      name: "Mock Group A",
-      description: "This is mock group A",
-      icon: "🤝",
-      color: "#FF5733",
-      currency: "USD",
-      member_ids: ["mock-user-id", "mock-friend-1-id", "mock-friend-2-id"],
-      members: [
-        {
-          id: "mock-user-id",
-          name: "Test User",
-          role: "admin",
-        },
-        {
-          id: "mock-friend-1-id",
-          name: "Mock Friend 1",
-          role: "member",
-        },
-        {
-          id: "mock-friend-2-id",
-          name: "Mock Friend 2",
-          role: "member",
-        },
-      ],
-    },
-    {
-      id: "mock-group-2",
-      name: "Mock Group B",
-      description: "This is mock group B",
-      icon: "✈️",
-      color: "#33FF57",
-      currency: "EUR",
-      member_ids: ["mock-user-id"],
-      members: [
-        {
-          id: "mock-user-id",
-          name: "Test User",
-          role: "admin",
-        },
-      ],
-    },
-  ]
+  // Simulate API delay
+  private async delay(ms = 500) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
 
-  private mockExpenses = [
-    {
-      id: "mock-expense-1",
-      description: "Mock Dinner",
-      amount: 50.0,
-      groupId: "mock-group-1",
-      paidBy: "mock-user-id",
-      participants: ["mock-user-id", "mock-friend-1-id"],
-      date: new Date().toISOString(),
-    },
-    {
-      id: "mock-expense-2",
-      description: "Mock Transport",
-      amount: 20.0,
-      groupId: "mock-group-1",
-      paidBy: "mock-friend-1-id",
-      participants: ["mock-user-id", "mock-friend-1-id", "mock-friend-2-id"],
-      date: new Date().toISOString(),
-    },
-  ]
+  // Mock user data
+  private getMockUser(email: string): User {
+    return {
+      id: "mock-user-" + Math.random().toString(36).substr(2, 9),
+      email,
+      name: email
+        .split("@")[0]
+        .replace(/[^a-zA-Z]/g, " ")
+        .replace(/\b\w/g, (l) => l.toUpperCase()),
+      phone: "+1234567890",
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+      role: "user",
+      is_verified: true,
+      created_at: new Date().toISOString(),
+      stats: {
+        total_groups: 2,
+        total_friends: 5,
+        total_expenses: 12,
+        net_balance: 150.75,
+      },
+    }
+  }
 
-  private mockFriends = [
-    {
-      id: "mock-friend-1-id",
-      name: "Mock Friend 1",
-      email: "friend1@example.com",
-    },
-    {
-      id: "mock-friend-2-id",
-      name: "Mock Friend 2",
-      email: "friend2@example.com",
-    },
-  ]
+  async register(userData: {
+    email: string
+    name: string
+    password: string
+    phone?: string
+    upi_id?: string
+  }) {
+    await this.delay()
 
-  async register(userData: any) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock register", userData)
-    return { message: "Mock registration successful", user: this.currentUser, token: this.mockToken }
+    console.log("📧 Mock Email: Registration verification email sent to", userData.email)
+
+    const user = this.getMockUser(userData.email)
+    this.currentUser = user
+    this.setToken("mock-token-" + user.id)
+
+    return {
+      user,
+      token: this.token,
+      message: "Registration successful! Check your email for verification.",
+    }
   }
 
   async login(credentials: { email: string; password: string }) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock login", credentials)
-    if (credentials.email === this.currentUser.email && credentials.password === "password") {
-      return { message: "Mock login successful", user: this.currentUser, token: this.mockToken }
-    } else {
-      throw new Error("Invalid mock credentials")
+    await this.delay()
+
+    const user = this.getMockUser(credentials.email)
+    this.currentUser = user
+    this.setToken("mock-token-" + user.id)
+
+    return {
+      user,
+      token: this.token,
+      message: "Login successful!",
     }
   }
 
   async getProfile() {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock getProfile")
-    return { user: this.currentUser }
+    await this.delay()
+
+    if (!this.token) {
+      throw new Error("No authentication token")
+    }
+
+    if (!this.currentUser) {
+      this.currentUser = this.getMockUser("demo@example.com")
+    }
+
+    return {
+      user: this.currentUser,
+      stats: this.currentUser.stats,
+    }
   }
 
   async updateProfile(updates: any) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock updateProfile", updates)
-    // In a real mock, you'd update currentUser
-    this.currentUser = { ...this.currentUser, ...updates }
-    return { message: "Mock profile update successful", user: this.currentUser }
-  }
+    await this.delay()
 
-  async createGroup(groupData: any) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock createGroup", groupData)
-    const newGroup = { ...groupData, id: `mock-group-${this.mockGroups.length + 1}`, members: [{ id: this.currentUser.id, name: this.currentUser.name, role: "admin" }] }
-    this.mockGroups.push(newGroup as any) // Simplified type for mock
-    return { message: "Mock group creation successful", group: newGroup }
+    if (!this.currentUser) {
+      throw new Error("No user logged in")
+    }
+
+    this.currentUser = { ...this.currentUser, ...updates }
+
+    return {
+      user: this.currentUser,
+      message: "Profile updated successfully",
+    }
   }
 
   async getUserGroups() {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock getUserGroups")
-    return { groups: this.mockGroups }
+    await this.delay()
+
+    const mockGroups: Group[] = [
+      {
+        id: "group-1",
+        name: "College Friends",
+        description: "Our college group expenses",
+        member_count: 4,
+        total_expenses: 1250.5,
+        user_balance: 75.25,
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "group-2",
+        name: "Roommates",
+        description: "Apartment shared expenses",
+        member_count: 3,
+        total_expenses: 850.75,
+        user_balance: -45.5,
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ]
+
+    return {
+      groups: mockGroups,
+      message: "Groups retrieved successfully",
+    }
+  }
+
+  async createGroup(groupData: any) {
+    await this.delay()
+
+    const newGroup: Group = {
+      id: "group-" + Math.random().toString(36).substr(2, 9),
+      name: groupData.name,
+      description: groupData.description || "",
+      member_count: 1,
+      total_expenses: 0,
+      user_balance: 0,
+      created_at: new Date().toISOString(),
+    }
+
+    return {
+      group: newGroup,
+      message: "Group created successfully",
+    }
   }
 
   async getGroup(groupId: string) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock getGroup", groupId)
-    const group = this.mockGroups.find((g) => g.id === groupId)
-    if (group) {
-      return { group }
-    } else {
-      throw new Error("Mock group not found")
+    await this.delay()
+
+    return {
+      group: {
+        id: groupId,
+        name: "Mock Group",
+        description: "A mock group for testing",
+        member_count: 3,
+        total_expenses: 500,
+        user_balance: 25,
+        created_at: new Date().toISOString(),
+      },
     }
   }
 
   async updateGroup(groupId: string, updates: any) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock updateGroup", groupId, updates)
-    const groupIndex = this.mockGroups.findIndex((g) => g.id === groupId)
-    if (groupIndex !== -1) {
-      this.mockGroups[groupIndex] = { ...this.mockGroups[groupIndex], ...updates }
-      return { message: "Mock group update successful", group: this.mockGroups[groupIndex] }
-    } else {
-      throw new Error("Mock group not found for update")
-    }
+    await this.delay()
+    return { message: "Group updated successfully" }
   }
 
   async deleteGroup(groupId: string) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock deleteGroup", groupId)
-    const initialLength = this.mockGroups.length
-    this.mockGroups = this.mockGroups.filter((g) => g.id !== groupId)
-    if (this.mockGroups.length < initialLength) {
-      return { message: "Mock group deletion successful" }
-    } else {
-      throw new Error("Mock group not found for deletion")
-    }
+    await this.delay()
+    return { message: "Group deleted successfully" }
   }
 
   async addGroupMember(groupId: string, userId: string, role = "member") {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock addGroupMember", groupId, userId, role)
-    const group = this.mockGroups.find((g) => g.id === groupId)
-    if (group) {
-      // In a real mock, you'd add a user object. Using ID for simplicity.
-      if (!group.member_ids.includes(userId)) {
-        group.member_ids.push(userId)
-        group.members.push({ id: userId, name: `Mock User ${userId.slice(-4)}`, role }) // Simplified user mock
-      }
-      return { message: "Mock member added successfully", group }
-    } else {
-      throw new Error("Mock group not found for adding member")
-    }
+    await this.delay()
+    return { message: "Member added successfully" }
   }
 
   async removeGroupMember(groupId: string, userId: string) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock removeGroupMember", groupId, userId)
-    const group = this.mockGroups.find((g) => g.id === groupId)
-    if (group) {
-      group.member_ids = group.member_ids.filter((id) => id !== userId)
-      group.members = group.members.filter((member) => member.id !== userId)
-      return { message: "Mock member removed successfully", group }
-    } else {
-      throw new Error("Mock group not found for removing member")
-    }
+    await this.delay()
+    return { message: "Member removed successfully" }
   }
 
   async getFriends() {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock getFriends")
-    return { friends: this.mockFriends }
+    await this.delay()
+
+    return {
+      friends: [
+        {
+          id: "friend-1",
+          name: "John Doe",
+          email: "john@example.com",
+          avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
+          status: "accepted",
+        },
+      ],
+    }
   }
 
   async getExpenses(groupId?: string) {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("Mock getExpenses", groupId)
-    if (groupId) {
-      return { expenses: this.mockExpenses.filter(exp => exp.groupId === groupId) }
-    } else {
-      return { expenses: this.mockExpenses }
+    await this.delay()
+
+    return {
+      expenses: [
+        {
+          id: "expense-1",
+          title: "Dinner at Restaurant",
+          amount: 120.5,
+          category: "food",
+          date: new Date().toISOString(),
+          created_by: "user-1",
+        },
+      ],
     }
   }
 
   async verifyEmail(token: string) {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await this.delay()
 
-    if (!token) {
-      throw new Error("Invalid verification token")
-    }
+    console.log("📧 Mock Email: Email verification completed for token:", token)
 
-    // In mock mode, always succeed
     return {
-      message: "Email verified successfully! Welcome to SplitKar!",
-      user: this.currentUser,
-      token: this.mockToken,
+      message: "Email verified successfully!",
+      verified: true,
     }
   }
 
   async forgotPassword(email: string) {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await this.delay()
+
+    console.log("📧 Mock Email: Password reset email sent to", email)
 
     return {
-      message: "If an account with that email exists, we've sent a password reset link.",
+      message: "Password reset email sent! Check your inbox.",
     }
   }
 
   async resetPassword(token: string, password: string) {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    if (!token || !password) {
-      throw new Error("Token and password are required")
-    }
+    await this.delay()
 
     return {
-      message: "Password reset successfully. You can now login with your new password.",
+      message: "Password reset successfully!",
     }
   }
 }
+
+export const mockApiClient = new MockApiClient()

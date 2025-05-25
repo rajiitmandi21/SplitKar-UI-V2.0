@@ -1,223 +1,275 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+// Helper function to make API requests
+async function makeApiRequest(endpoint: string, options: RequestInit = {}) {
+  const url = `${API_BASE_URL}${endpoint}`
 
-async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const defaultHeaders = {
+    "Content-Type": "application/json",
+  }
+
+  // Add API key if available
+  if (process.env.API_KEY) {
+    defaultHeaders["X-API-Key"] = process.env.API_KEY
+  }
+
+  const response = await fetch(url, {
+    ...options,
     headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": process.env.API_KEY || "",
+      ...defaultHeaders,
       ...options.headers,
     },
-    ...options,
   })
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(error || "API call failed")
+    const errorData = await response.json().catch(() => ({ message: "Request failed" }))
+    throw new Error(errorData.message || `HTTP ${response.status}`)
   }
 
   return response.json()
 }
 
-export async function register(data: FormData) {
+// Auth actions
+export async function registerUser(userData: {
+  email: string
+  name: string
+  password: string
+  phone?: string
+  upi_id?: string
+}) {
   try {
-    const res = await apiCall("/auth/register", {
+    return await makeApiRequest("/auth/register", {
       method: "POST",
-      body: JSON.stringify(Object.fromEntries(data)),
+      body: JSON.stringify(userData),
     })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Registration failed",
+    }
   }
 }
 
-export async function login(data: FormData) {
+export async function loginUser(credentials: { email: string; password: string }) {
   try {
-    const res = await apiCall("/auth/login", {
+    return await makeApiRequest("/auth/login", {
       method: "POST",
-      body: JSON.stringify(Object.fromEntries(data)),
+      body: JSON.stringify(credentials),
     })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Login failed",
+    }
   }
 }
 
-export async function getProfile() {
+export async function getUserProfile(token: string) {
   try {
-    const res = await apiCall("/auth/profile", {
+    return await makeApiRequest("/auth/profile", {
       method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to get profile",
+    }
+  }
+}
+
+export async function updateUserProfile(token: string, updates: any) {
+  try {
+    return await makeApiRequest("/auth/profile", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updates),
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to update profile",
+    }
+  }
+}
+
+// Group actions
+export async function createGroup(token: string, groupData: any) {
+  try {
+    return await makeApiRequest("/groups", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(groupData),
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to create group",
+    }
+  }
+}
+
+export async function getUserGroups(token: string) {
+  try {
+    return await makeApiRequest("/groups", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to get groups",
+    }
+  }
+}
+
+export async function getGroup(token: string, groupId: string) {
+  try {
+    return await makeApiRequest(`/groups/${groupId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to get group",
+    }
+  }
+}
+
+export async function updateGroup(token: string, groupId: string, updates: any) {
+  try {
+    return await makeApiRequest(`/groups/${groupId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updates),
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to update group",
+    }
+  }
+}
+
+export async function deleteGroup(token: string, groupId: string) {
+  try {
+    return await makeApiRequest(`/groups/${groupId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to delete group",
+    }
+  }
+}
+
+export async function addGroupMember(token: string, groupId: string, userId: string, role = "member") {
+  try {
+    return await makeApiRequest(`/groups/${groupId}/members`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ user_id: userId, role }),
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to add member",
+    }
+  }
+}
+
+export async function removeGroupMember(token: string, groupId: string, userId: string) {
+  try {
+    return await makeApiRequest(`/groups/${groupId}/members/${userId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to remove member",
+    }
+  }
+}
+
+// Other actions
+export async function getFriends(token: string) {
+  try {
+    return await makeApiRequest("/friends", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to get friends",
+    }
+  }
+}
+
+export async function getExpenses(token: string, groupId?: string) {
+  try {
+    const endpoint = groupId ? `/expenses?group_id=${groupId}` : "/expenses"
+    return await makeApiRequest(endpoint, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to get expenses",
+    }
   }
 }
 
 export async function verifyEmail(token: string) {
   try {
-    const res = await apiCall(`/auth/verify?token=${token}`, {
+    return await makeApiRequest(`/auth/verify?token=${token}`, {
       method: "GET",
     })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Email verification failed",
+    }
   }
 }
 
-export async function forgotPassword(data: FormData) {
+export async function forgotPassword(email: string) {
   try {
-    const res = await apiCall("/auth/forgot-password", {
+    return await makeApiRequest("/auth/forgot-password", {
       method: "POST",
-      body: JSON.stringify(Object.fromEntries(data)),
+      body: JSON.stringify({ email }),
     })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to send reset email",
+    }
   }
 }
 
-export async function resetPassword(data: FormData) {
+export async function resetPassword(token: string, password: string) {
   try {
-    const res = await apiCall("/auth/reset-password", {
+    return await makeApiRequest("/auth/reset-password", {
       method: "POST",
-      body: JSON.stringify(Object.fromEntries(data)),
+      body: JSON.stringify({ token, password }),
     })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function createGroup(data: FormData) {
-  try {
-    const res = await apiCall("/groups", {
-      method: "POST",
-      body: JSON.stringify(Object.fromEntries(data)),
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function getGroups() {
-  try {
-    const res = await apiCall("/groups", {
-      method: "GET",
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function getGroup(groupId: string) {
-  try {
-    const res = await apiCall(`/groups/${groupId}`, {
-      method: "GET",
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function updateGroup(groupId: string, data: FormData) {
-  try {
-    const res = await apiCall(`/groups/${groupId}`, {
-      method: "PUT",
-      body: JSON.stringify(Object.fromEntries(data)),
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function deleteGroup(groupId: string) {
-  try {
-    const res = await apiCall(`/groups/${groupId}`, {
-      method: "DELETE",
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function addGroupMember(groupId: string, userId: string) {
-  try {
-    const res = await apiCall(`/groups/${groupId}/members`, {
-      method: "POST",
-      body: JSON.stringify({ userId }),
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function getGroupMembers(groupId: string) {
-  try {
-    const res = await apiCall(`/groups/${groupId}/members`, {
-      method: "GET",
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function deleteGroupMember(groupId: string, userId: string) {
-  try {
-    const res = await apiCall(`/groups/${groupId}/members/${userId}`, {
-      method: "DELETE",
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function getFriends() {
-  try {
-    const res = await apiCall("/friends", {
-      method: "GET",
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
-  }
-}
-
-export async function createExpense(data: FormData) {
-  try {
-    const res = await apiCall("/expenses", {
-      method: "POST",
-      body: JSON.stringify(Object.fromEntries(data)),
-    })
-    revalidatePath("/")
-    return res
-  } catch (e: any) {
-    return { error: e.message }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Password reset failed",
+    }
   }
 }
