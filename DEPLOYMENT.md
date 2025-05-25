@@ -62,7 +62,7 @@ npm run dev
 cd backend
 
 # Start with Docker Compose
-docker-compose up -d
+docker compose up -d
 
 # This will start:
 # - PostgreSQL database on port 5432
@@ -134,7 +134,7 @@ createdb splitkar_db
 psql splitkar_db -f backend/db/schema.sql
 
 # Or with Docker
-docker-compose up -d postgres
+docker compose up -d postgres
 \`\`\`
 
 ### Production Options

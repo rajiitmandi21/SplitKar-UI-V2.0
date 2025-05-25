@@ -83,7 +83,7 @@ nano .env
 ### 3. **Docker Setup**
 \`\`\`bash
 # Uses centralized .env file
-docker-compose up -d
+docker compose up -d
 \`\`\`
 
 ### 4. **Local Development**

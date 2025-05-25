@@ -79,7 +79,7 @@ setup_backend() {
     print_status "Setting up database..."
     if [ -f "../docker-compose.yml" ]; then
         cd ..
-        docker-compose up -d postgres
+        docker compose up -d postgres
         sleep 5
         cd backend
     fi
