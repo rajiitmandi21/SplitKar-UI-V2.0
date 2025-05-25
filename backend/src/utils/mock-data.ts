@@ -1,6 +1,6 @@
 import { userModel } from "../models/User"
 import { groupModel } from "../models/Group"
-import { db } from "../config/database"
+import { getDB } from "../config/database"
 import { logger } from "./logger"
 
 export class MockDataService {
@@ -168,7 +168,7 @@ export class MockDataService {
     const createdExpenses = []
     for (const expenseData of mockExpenses) {
       try {
-        const result = await db.transaction(async (client) => {
+        const result = await getDB().transaction(async (client) => {
           // Create expense
           const expenseResult = await client.query(
             `INSERT INTO expenses (description, amount, category, paid_by, group_id, date)
@@ -233,12 +233,12 @@ export class MockDataService {
     logger.info("🧹 Clearing mock data...")
 
     try {
-      await db.query("DELETE FROM expense_splits WHERE 1=1")
-      await db.query("DELETE FROM expenses WHERE 1=1")
-      await db.query("DELETE FROM group_members WHERE 1=1")
-      await db.query("DELETE FROM groups WHERE 1=1")
-      await db.query("DELETE FROM user_settings WHERE 1=1")
-      await db.query("DELETE FROM users WHERE email LIKE '%@demo.com'")
+      await getDB().query("DELETE FROM expense_splits WHERE 1=1")
+      await getDB().query("DELETE FROM expenses WHERE 1=1")
+      await getDB().query("DELETE FROM group_members WHERE 1=1")
+      await getDB().query("DELETE FROM groups WHERE 1=1")
+      await getDB().query("DELETE FROM user_settings WHERE 1=1")
+      await getDB().query("DELETE FROM users WHERE email LIKE '%@demo.com'")
 
       logger.info("✅ Mock data cleared successfully")
     } catch (error) {
