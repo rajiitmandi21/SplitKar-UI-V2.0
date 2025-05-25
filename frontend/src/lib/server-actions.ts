@@ -1,15 +1,14 @@
 "use server"
 
-import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 
-// Mock API base URL - replace with actual backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
-// Helper function to make API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: {
       "Content-Type": "application/json",
+      "X-API-Key": process.env.API_KEY || "",
       ...options.headers,
     },
     ...options,
@@ -23,283 +22,202 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   return response.json()
 }
 
-// Auth actions
-export async function registerUser(userData: {
-  email: string
-  name: string
-  password: string
-  phone?: string
-  upi_id?: string
-}) {
+export async function register(data: FormData) {
   try {
-    const response = await apiCall("/api/auth/register", {
+    const res = await apiCall("/auth/register", {
       method: "POST",
-      body: JSON.stringify(userData),
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Registration failed" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function loginUser(credentials: { email: string; password: string }) {
+export async function login(data: FormData) {
   try {
-    const response = await apiCall("/api/auth/login", {
+    const res = await apiCall("/auth/login", {
       method: "POST",
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Login failed" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function getUserProfile(token: string) {
+export async function getProfile() {
   try {
-    const response = await apiCall("/api/auth/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await apiCall("/auth/profile", {
+      method: "GET",
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to get profile" }
-  }
-}
-
-export async function updateUserProfile(token: string, updates: any) {
-  try {
-    const response = await apiCall("/api/auth/profile", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(updates),
-    })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to update profile" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
 export async function verifyEmail(token: string) {
   try {
-    const response = await apiCall("/api/auth/verify", {
+    const res = await apiCall(`/auth/verify?token=${token}`, {
+      method: "GET",
+    })
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
+export async function forgotPassword(data: FormData) {
+  try {
+    const res = await apiCall("/auth/forgot-password", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Email verification failed" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function forgotPassword(email: string) {
+export async function resetPassword(data: FormData) {
   try {
-    const response = await apiCall("/api/auth/forgot-password", {
+    const res = await apiCall("/auth/reset-password", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Password reset request failed" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function resetPassword(token: string, password: string) {
+export async function createGroup(data: FormData) {
   try {
-    const response = await apiCall("/api/auth/reset-password", {
+    const res = await apiCall("/groups", {
       method: "POST",
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Password reset failed" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-// Group actions
-export async function createGroup(token: string, groupData: any) {
+export async function getGroups() {
   try {
-    const response = await apiCall("/api/groups", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(groupData),
+    const res = await apiCall("/groups", {
+      method: "GET",
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to create group" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function getUserGroups(token: string) {
+export async function getGroup(groupId: string) {
   try {
-    const response = await apiCall("/api/groups", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await apiCall(`/groups/${groupId}`, {
+      method: "GET",
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to get groups" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function getGroup(token: string, groupId: string) {
+export async function updateGroup(groupId: string, data: FormData) {
   try {
-    const response = await apiCall(`/api/groups/${groupId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to get group" }
-  }
-}
-
-export async function updateGroup(token: string, groupId: string, updates: any) {
-  try {
-    const response = await apiCall(`/api/groups/${groupId}`, {
+    const res = await apiCall(`/groups/${groupId}`, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to update group" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function deleteGroup(token: string, groupId: string) {
+export async function deleteGroup(groupId: string) {
   try {
-    const response = await apiCall(`/api/groups/${groupId}`, {
+    const res = await apiCall(`/groups/${groupId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to delete group" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function addGroupMember(token: string, groupId: string, userId: string, role = "member") {
+export async function addGroupMember(groupId: string, userId: string) {
   try {
-    const response = await apiCall(`/api/groups/${groupId}/members`, {
+    const res = await apiCall(`/groups/${groupId}/members`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ userId, role }),
+      body: JSON.stringify({ userId }),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to add group member" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-export async function removeGroupMember(token: string, groupId: string, userId: string) {
+export async function getGroupMembers(groupId: string) {
   try {
-    const response = await apiCall(`/api/groups/${groupId}/members/${userId}`, {
+    const res = await apiCall(`/groups/${groupId}/members`, {
+      method: "GET",
+    })
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
+export async function deleteGroupMember(groupId: string, userId: string) {
+  try {
+    const res = await apiCall(`/groups/${groupId}/members/${userId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to remove group member" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-// Friends actions
-export async function getFriends(token: string) {
+export async function getFriends() {
   try {
-    const response = await apiCall("/api/friends", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await apiCall("/friends", {
+      method: "GET",
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to get friends" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
 }
 
-// Expenses actions
-export async function getExpenses(token: string, groupId?: string) {
+export async function createExpense(data: FormData) {
   try {
-    const endpoint = groupId ? `/api/expenses?groupId=${groupId}` : "/api/expenses"
-    const response = await apiCall(endpoint, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await apiCall("/expenses", {
+      method: "POST",
+      body: JSON.stringify(Object.fromEntries(data)),
     })
-    return response
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Failed to get expenses" }
+    revalidatePath("/")
+    return res
+  } catch (e: any) {
+    return { error: e.message }
   }
-}
-
-// Form actions for Next.js forms
-export async function loginAction(formData: FormData) {
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
-
-  const result = await loginUser({ email, password })
-
-  if (result.error) {
-    throw new Error(result.error)
-  }
-
-  redirect("/dashboard")
-}
-
-export async function registerAction(formData: FormData) {
-  const name = formData.get("name") as string
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
-  const phone = formData.get("phone") as string
-  const upi_id = formData.get("upi_id") as string
-
-  const result = await registerUser({ name, email, password, phone, upi_id })
-
-  if (result.error) {
-    throw new Error(result.error)
-  }
-
-  redirect("/onboarding")
-}
-
-export async function createGroupAction(formData: FormData) {
-  const name = formData.get("name") as string
-  const description = formData.get("description") as string
-
-  // This would need the auth token in a real implementation
-  // For now, just redirect
-  if (name) {
-    redirect("/groups")
-  }
-
-  throw new Error("Failed to create group")
-}
-
-export async function addExpenseAction(formData: FormData) {
-  const title = formData.get("title") as string
-  const amount = formData.get("amount") as string
-  const groupId = formData.get("groupId") as string
-
-  // This would need the auth token in a real implementation
-  // For now, just redirect
-  if (title && amount && groupId) {
-    redirect("/dashboard")
-  }
-
-  throw new Error("Failed to add expense")
 }
