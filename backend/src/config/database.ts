@@ -33,7 +33,7 @@ class Database {
       this.isConnected = true
     })
 
-    this.pool.on("error", (err) => {
+    this.pool.on("error", (err: Error) => {
       logger.error("❌ Unexpected error on idle client", { error: err.message, stack: err.stack })
       this.isConnected = false
     })
