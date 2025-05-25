@@ -9,7 +9,7 @@ import helmet from "helmet"
 import { logger } from "./utils/logger"
 
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001 // Changed from 5000 to 5001
 
 // Middleware
 app.use(helmet())
@@ -109,7 +109,7 @@ export async function startServer() {
       if (error.code === "EADDRINUSE") {
         logger.error(`❌ Port ${PORT} is already in use`, {
           port: PORT,
-          suggestion: "Try running: lsof -ti:5000 | xargs kill -9",
+          suggestion: `Try running: lsof -ti:${PORT} | xargs kill -9`,
         })
         reject(new Error(`Port ${PORT} is already in use`))
       } else {
