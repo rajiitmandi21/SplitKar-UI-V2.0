@@ -52,7 +52,7 @@
     "express": "latest",
     "express-rate-limit": "latest",
     "fs": "latest",
-    "googleapis": "latest",
+    "google-auth-library": "latest",
     "helmet": "latest",
     "input-otp": "1.4.1",
     "jsonwebtoken": "latest",

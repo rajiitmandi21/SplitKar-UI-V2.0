@@ -1,51 +1,78 @@
 import nodemailer from "nodemailer"
-import { google } from "googleapis"
+import { OAuth2Client } from "google-auth-library"
 import { logger } from "../utils/logger"
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null
-  private gmail: any
 
   constructor() {
-    this.initializeGoogleAuth()
     this.initializeTransporter()
   }
 
-  private initializeGoogleAuth(): void {
+  private async initializeTransporter(): Promise<void> {
     try {
-      // Create JWT client using service account credentials
-      const jwtClient = new google.auth.JWT(
-        process.env.CLIENT_EMAIL,
-        undefined,
-        process.env.PRIVATE_KEY?.replace(/\\n/g, "\n"), // Handle escaped newlines
-        ["https://www.googleapis.com/auth/gmail.send"],
-        undefined,
-      )
+      // Check if we have OAuth2 credentials
+      if (
+        process.env.GMAIL_CLIENT_ID &&
+        process.env.GMAIL_CLIENT_SECRET &&
+        process.env.GMAIL_REFRESH_TOKEN &&
+        process.env.GMAIL_USER
+      ) {
+        // Create OAuth2 client
+        const oauth2Client = new OAuth2Client(
+          process.env.GMAIL_CLIENT_ID,
+          process.env.GMAIL_CLIENT_SECRET,
+          "https://developers.google.com/oauthplayground",
+        )
 
-      // Initialize Gmail API
-      this.gmail = google.gmail({ version: "v1", auth: jwtClient })
+        oauth2Client.setCredentials({
+          refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+        })
 
-      logger.info("✅ Google Service Account initialized successfully")
-    } catch (error) {
-      logger.error("❌ Failed to initialize Google Service Account", { error })
-    }
-  }
+        try {
+          // Get access token
+          const accessTokenResponse = await oauth2Client.getAccessToken()
+          const accessToken = accessTokenResponse.token
 
-  private initializeTransporter(): void {
-    try {
-      // Simple SMTP configuration
-      const options = {
-        host: process.env.SMTP_HOST || "smtp.ethereal.email",
-        port: Number.parseInt(process.env.SMTP_PORT || "587"),
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER || "ethereal.user@ethereal.email",
-          pass: process.env.SMTP_PASSWORD || "ethereal_pass",
-        },
+          // Create transporter with OAuth2
+          const transportOptions = {
+            service: "gmail",
+            auth: {
+              type: "OAuth2",
+              user: process.env.GMAIL_USER,
+              clientId: process.env.GMAIL_CLIENT_ID,
+              clientSecret: process.env.GMAIL_CLIENT_SECRET,
+              refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+              accessToken: accessToken,
+            },
+          }
+
+          this.transporter = nodemailer.createTransport(transportOptions)
+          await this.transporter.verify()
+          logger.info("✅ Email transporter initialized with OAuth2")
+          return
+        } catch (oauthError) {
+          logger.warn("OAuth2 setup failed, falling back to development mode", { error: oauthError })
+        }
+      } else {
+        logger.warn("OAuth2 credentials not found, using development mode")
       }
 
-      this.transporter = nodemailer.createTransport(options)
-      logger.info("✅ Email transporter initialized")
+      // Development mode - just log emails instead of sending
+      this.transporter = {
+        sendMail: async (mailOptions: any) => {
+          logger.info("📧 [DEV MODE] Email would be sent:", {
+            to: mailOptions.to,
+            subject: mailOptions.subject,
+            text: mailOptions.text?.substring(0, 100) + "...",
+            html: "HTML content omitted",
+          })
+          return { messageId: `dev-${Date.now()}` }
+        },
+        verify: async () => true,
+      } as any
+
+      logger.info("✅ Email transporter initialized in development mode")
     } catch (error) {
       logger.error("❌ Failed to initialize email transporter", { error })
     }
@@ -55,7 +82,7 @@ class EmailService {
     const verificationUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/verify?token=${verificationToken}`
 
     const mailOptions = {
-      from: `"SplitKar" <${process.env.SMTP_USER || "noreply@splitkar.com"}>`,
+      from: `"SplitKar" <${process.env.GMAIL_USER || "noreply@splitkar.com"}>`,
       to: email,
       subject: "Verify your SplitKar account",
       html: `
@@ -79,12 +106,6 @@ class EmailService {
         throw new Error("Email transporter not initialized")
       }
 
-      // For development, just log the email instead of sending it
-      if (process.env.NODE_ENV === "development") {
-        logger.info(`✅ [DEV] Verification email for ${email}`, { verificationUrl })
-        return true
-      }
-
       await this.transporter.sendMail(mailOptions)
       logger.info(`✅ Verification email sent to ${email}`)
       return true
@@ -98,7 +119,7 @@ class EmailService {
     const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/reset-password?token=${resetToken}`
 
     const mailOptions = {
-      from: `"SplitKar" <${process.env.SMTP_USER || "noreply@splitkar.com"}>`,
+      from: `"SplitKar" <${process.env.GMAIL_USER || "noreply@splitkar.com"}>`,
       to: email,
       subject: "Reset your SplitKar password",
       html: `
@@ -181,7 +202,7 @@ class EmailService {
 
   async sendWelcomeEmail(email: string, name: string): Promise<boolean> {
     const mailOptions = {
-      from: `"SplitKar" <${process.env.SMTP_USER || "noreply@splitkar.com"}>`,
+      from: `"SplitKar" <${process.env.GMAIL_USER || "noreply@splitkar.com"}>`,
       to: email,
       subject: "Welcome to SplitKar! 🎉",
       html: `
