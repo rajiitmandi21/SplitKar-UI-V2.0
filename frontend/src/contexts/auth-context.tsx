@@ -11,8 +11,16 @@ interface User {
   isVerified: boolean
 }
 
+interface UserStats {
+  total_groups: number;
+  total_friends: number;
+  total_expenses: number;
+  net_balance: number;
+}
+
 interface AuthContextType {
   user: User | null
+  stats: UserStats | null
   login: (email: string, password: string) => Promise<boolean>
   register: (userData: any) => Promise<boolean>
   logout: () => void
@@ -23,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [stats, setStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -82,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("auth_token")
   }
 
-  return <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, stats, login, register, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

@@ -32,7 +32,7 @@ export default function ApiDebugPage() {
   const [testPassword, setTestPassword] = useState("password123")
 
   // API Configuration
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND === "true"
 
   // Intercept fetch to log API calls

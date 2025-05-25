@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/a
 async function makeApiRequest(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`
 
-  const defaultHeaders = {
+  const defaultHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   }
 

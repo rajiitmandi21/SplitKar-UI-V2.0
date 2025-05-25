@@ -159,7 +159,7 @@ npm start`}
               <AlertDescription>
                 <strong>Frontend not connecting?</strong> Check your .env.local:
                 <pre className="mt-2 text-xs">
-                  {`NEXT_PUBLIC_API_URL=http://localhost:5000/api
+                  {`NEXT_PUBLIC_API_URL=http://localhost:5001/api
 API_KEY=your-api-key-here`}
                 </pre>
               </AlertDescription>
