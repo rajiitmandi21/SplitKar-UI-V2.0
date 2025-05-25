@@ -199,11 +199,63 @@ CREATE TABLE IF NOT EXISTS activity_log (
     group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
     expense_id UUID REFERENCES expenses(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,
-    description TEXT NOT NULL,
+    description TEXT,
     metadata JSONB,
     ip_address INET,
     user_agent TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- UPI payment links table
+CREATE TABLE IF NOT EXISTS upi_payment_links (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    short_code VARCHAR(20) UNIQUE NOT NULL,
+    upi_id VARCHAR(100) NOT NULL,
+    payee_name VARCHAR(255) NOT NULL,
+    amount DECIMAL(12, 2),
+    currency VARCHAR(3) DEFAULT 'INR',
+    message TEXT,
+    transaction_note TEXT,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    expense_id UUID REFERENCES expenses(id) ON DELETE SET NULL,
+    group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT true,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    click_count INTEGER DEFAULT 0,
+    last_accessed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- URL shortener table (for general purpose short links)
+CREATE TABLE IF NOT EXISTS short_urls (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    short_code VARCHAR(20) UNIQUE NOT NULL,
+    original_url TEXT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT true,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    click_count INTEGER DEFAULT 0,
+    last_accessed_at TIMESTAMP WITH TIME ZONE,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- UPI payment link analytics table
+CREATE TABLE IF NOT EXISTS upi_link_analytics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    upi_link_id UUID NOT NULL REFERENCES upi_payment_links(id) ON DELETE CASCADE,
+    ip_address INET,
+    user_agent TEXT,
+    referer TEXT,
+    country VARCHAR(2),
+    city VARCHAR(100),
+    device_type VARCHAR(50), -- mobile, desktop, tablet
+    browser VARCHAR(50),
+    accessed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Indexes for better performance
@@ -225,6 +277,13 @@ CREATE INDEX IF NOT EXISTS idx_disputes_expense_id ON disputes(expense_id);
 CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes(status);
 CREATE INDEX IF NOT EXISTS idx_activity_log_user_id ON activity_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_upi_payment_links_short_code ON upi_payment_links(short_code);
+CREATE INDEX IF NOT EXISTS idx_upi_payment_links_created_by ON upi_payment_links(created_by);
+CREATE INDEX IF NOT EXISTS idx_upi_payment_links_expense_id ON upi_payment_links(expense_id);
+CREATE INDEX IF NOT EXISTS idx_short_urls_short_code ON short_urls(short_code);
+CREATE INDEX IF NOT EXISTS idx_short_urls_created_by ON short_urls(created_by);
+CREATE INDEX IF NOT EXISTS idx_upi_link_analytics_upi_link_id ON upi_link_analytics(upi_link_id);
+CREATE INDEX IF NOT EXISTS idx_upi_link_analytics_accessed_at ON upi_link_analytics(accessed_at);
 
 -- Functions for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -243,6 +302,8 @@ CREATE TRIGGER update_expenses_updated_at BEFORE UPDATE ON expenses FOR EACH ROW
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_disputes_updated_at BEFORE UPDATE ON disputes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_recurring_bills_updated_at BEFORE UPDATE ON recurring_bills FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_upi_payment_links_updated_at BEFORE UPDATE ON upi_payment_links FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_short_urls_updated_at BEFORE UPDATE ON short_urls FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Sample data for development (optional)
 -- INSERT INTO users (email, name, password_hash, phone, upi_id) VALUES 

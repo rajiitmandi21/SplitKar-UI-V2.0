@@ -42,7 +42,7 @@ export default function MaterialAuthPage() {
     setIsLoading(true)
     setError("")
     try {
-      // Simulate OTP sending
+    // Simulate OTP sending
       await new Promise(resolve => setTimeout(resolve, 1500))
       setShowOtp(true)
       setSuccess("OTP sent successfully!")
@@ -124,8 +124,8 @@ export default function MaterialAuthPage() {
                   Welcome to SplitKar!
                 </h2>
                 <p className="text-on-surface-variant dark:text-on-surface-variant-dark mb-8 text-xl leading-relaxed">
-                  Join thousands of users who've made expense splitting effortless. No more awkward money conversations!
-                </p>
+                Join thousands of users who've made expense splitting effortless. No more awkward money conversations!
+              </p>
               </div>
 
               {/* Enhanced Material Illustration with better spacing */}
@@ -391,42 +391,42 @@ export default function MaterialAuthPage() {
                           <div className="flex">
                             <div className="flex items-center px-4 bg-surface-container dark:bg-surface-container-dark border border-r-0 rounded-l-xl h-12">
                               <span className="text-sm text-on-surface dark:text-on-surface-dark font-semibold">+91</span>
-                            </div>
-                            <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="9876543210"
-                              value={phoneNumber}
-                              onChange={(e) => setPhoneNumber(e.target.value)}
+                          </div>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="9876543210"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
                               className="rounded-l-none h-12 text-base"
                               disabled={isLoading}
-                            />
-                          </div>
+                          />
                         </div>
+                      </div>
 
-                        {phoneNumber.length === 10 && (
+                      {phoneNumber.length === 10 && (
                           <div className="space-y-2">
                             <Label htmlFor="otp" className="text-on-secondary-container dark:text-on-secondary-container-dark font-semibold">OTP</Label>
-                            <Input
-                              id="otp"
-                              type="text"
-                              placeholder="Enter 6-digit OTP"
-                              value={otp}
-                              onChange={(e) => setOtp(e.target.value)}
+                          <Input
+                            id="otp"
+                            type="text"
+                            placeholder="Enter 6-digit OTP"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
                               className="h-12 text-base"
                               disabled={isLoading}
-                            />
+                          />
                             <p className="text-sm text-on-secondary-container dark:text-on-secondary-container-dark font-medium">OTP sent to +91 {phoneNumber}</p>
-                          </div>
-                        )}
+                        </div>
+                      )}
 
                         <MaterialButton
-                          onClick={handlePhoneAuth}
-                          disabled={isLoading || phoneNumber.length !== 10}
+                        onClick={handlePhoneAuth}
+                        disabled={isLoading || phoneNumber.length !== 10}
                           variant="filled"
                           className="w-full h-12 text-base font-semibold"
                           elevation={1}
-                        >
+                      >
                           {isLoading ? (
                             <>
                               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -434,7 +434,7 @@ export default function MaterialAuthPage() {
                             </>
                           ) : phoneNumber.length === 10 ? "Verify OTP" : "Send OTP"}
                         </MaterialButton>
-                      </div>
+                    </div>
                     </MaterialCard>
                   )}
 

@@ -24,8 +24,10 @@ import {
   Home,
   Copy,
   Share,
+  Link as LinkIcon,
 } from "lucide-react"
 import Link from "next/link"
+import UPIPaymentGenerator from "@/components/upi-payment-generator"
 
 export default function SettlePage() {
   const [selectedTab, setSelectedTab] = useState("individual")
@@ -181,9 +183,10 @@ export default function SettlePage() {
 
       <div className="container mx-auto px-4 py-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="individual">Individual</TabsTrigger>
             <TabsTrigger value="smart">Smart Settle</TabsTrigger>
+            <TabsTrigger value="upi-generator">UPI Links</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
 
@@ -468,6 +471,109 @@ export default function SettlePage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </TabsContent>
+
+          {/* UPI Payment Link Generator Tab */}
+          <TabsContent value="upi-generator" className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div>
+                <UPIPaymentGenerator
+                  defaultData={{
+                    createdBy: "current-user-id", // Replace with actual user ID
+                  }}
+                  onLinkCreated={(link) => {
+                    console.log("UPI payment link created:", link)
+                    // You can add additional logic here, like showing a success message
+                  }}
+                />
+              </div>
+              
+              <div className="space-y-6">
+                {/* Quick UPI Templates */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <LinkIcon className="w-5 h-5" />
+                      Quick Templates
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {friendsWithBalance.slice(0, 3).map((friend) => (
+                      <div
+                        key={friend.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback className="bg-gradient-to-r from-orange-400 to-pink-400 text-white">
+                              {friend.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{friend.name}</p>
+                            <p className="text-sm text-gray-500">{friend.upiId}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${friend.balance < 0 ? "text-red-600" : "text-green-600"}`}>
+                            ₹{Math.abs(friend.balance)}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Auto-fill the form with friend's data
+                              setSelectedTab("upi-generator")
+                              // You would need to pass this data to the UPIPaymentGenerator component
+                            }}
+                          >
+                            <LinkIcon className="w-3 h-3 mr-1" />
+                            Generate
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* UPI Link Benefits */}
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardHeader>
+                    <CardTitle className="text-blue-900">Why Use UPI Payment Links?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-blue-900">Easy Sharing</p>
+                        <p className="text-sm text-blue-700">Share via WhatsApp, SMS, or any messaging app</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-blue-900">Custom Domain</p>
+                        <p className="text-sm text-blue-700">Professional short URLs with your domain</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-blue-900">Analytics</p>
+                        <p className="text-sm text-blue-700">Track clicks and payment completion</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-blue-900">Secure</p>
+                        <p className="text-sm text-blue-700">Encrypted links with optional expiry dates</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 

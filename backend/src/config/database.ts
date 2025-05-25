@@ -230,7 +230,7 @@ export const initializeDatabase = async (): Promise<void> => {
     // Create database instance to initialize the connection
     const database = new Database()
     await database.testConnection()
-    
+
     logger.info("✅ Database connected successfully")
   } catch (error) {
     logger.error("❌ Database connection failed", { error })
