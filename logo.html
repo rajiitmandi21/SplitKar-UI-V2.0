@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SplitKar Logo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8; /* Light background for better contrast */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .logo-container {
+            text-align: center;
+            padding: 40px;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: inline-block; /* So it doesn't take full width */
+        }
+
+        .logo {
+            display: flex; /* Changed to flex for better alignment and control */
+            align-items: center; /* Vertically align items in the logo */
+            justify-content: center; /* Center items horizontally */
+            position: relative; /* For positioning pseudo-elements or rupee */
+            cursor: pointer;
+            margin-bottom: 15px; /* Space before tagline */
+        }
+
+        .logo-text {
+            font-size: clamp(2.5rem, 5vw, 4rem); /* Responsive font size */
+            font-weight: 700;
+            transition: color 0.4s ease-in-out;
+        }
+
+        .split {
+            color: #EA5455; /* Coral */
+        }
+
+        .kar {
+            color: #00B8A9; /* Mint */
+            transition: color 0.4s ease-in-out, transform 0.4s ease-in-out;
+            display: inline-block; /* Needed for transform */
+        }
+
+        .slash {
+            width: clamp(8px, 1.5vw, 12px); /* Responsive slash width */
+            height: clamp(40px, 7vw, 60px); /* Responsive slash height */
+            margin: 0 clamp(5px, 1vw, 10px); /* Responsive margin */
+            background: linear-gradient(to bottom, #EA5455, #00B8A9);
+            transform: skewX(-15deg); /* Angled slash */
+            transition: background 0.4s ease-in-out, transform 0.4s ease-in-out;
+            position: relative; /* For motion hint pseudo-element */
+        }
+        
+        /* Subtle motion hint - a line that quickly appears and disappears on hover */
+        .slash::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: -10%;
+            width: 2px;
+            height: 0%;
+            background-color: #EA5455; /* Starts coral */
+            opacity: 0;
+            transition: height 0.3s ease-out, opacity 0.3s ease-out, background-color 0.4s ease-in-out;
+            transform: translateX(-50%);
+        }
+
+        .logo:hover .split {
+            color: #00B8A9; /* Mint */
+        }
+
+        .logo:hover .kar {
+            color: #EA5455; /* Coral */
+            transform: translateX(10px); /* Increased slightly for better visibility */
+        }
+
+        .logo:hover .slash {
+            background: linear-gradient(to bottom, #00B8A9, #EA5455);
+            transform: skewX(-10deg) scale(1.05); /* Subtle animation on slash itself */
+        }
+        
+        .logo:hover .slash::before {
+            height: 120%;
+            opacity: 0.7;
+            background-color: #00B8A9; /* Changes to mint */
+        }
+
+
+        .tagline {
+            font-size: clamp(0.8rem, 2vw, 1rem); /* Responsive font size */
+            font-weight: 300;
+            color: #2D4059; /* Navy */
+            margin-top: 5px;
+        }
+
+        .rupee-symbol {
+            font-size: clamp(1rem, 2.5vw, 1.5rem); /* Responsive font size */
+            color: #00B8A9; /* Mint */
+            position: absolute;
+            top: -25px; /* Position above the logo */
+            right: -25px; /* Position to the right */
+            animation: bounce 0.8s infinite alternate ease-in-out;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .logo:hover .rupee-symbol {
+            opacity: 1; /* Show on hover for demo */
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            .logo-container {
+                padding: 25px;
+            }
+            .kar {
+                 margin-left: -2px; /* Adjust spacing for smaller screens if needed */
+            }
+            .logo:hover .kar {
+                transform: translateX(5px); /* Less slide on mobile */
+            }
+            .rupee-symbol {
+                top: -15px;
+                right: -15px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <div class="logo" aria-label="SplitKar Logo">
+            <span class="logo-text split">Split</span>
+            <div class="slash" aria-hidden="true"></div>
+            <span class="logo-text kar">Kar</span>
+            <div class="rupee-symbol" aria-hidden="true">₹</div>
+        </div>
+        <div class="tagline">Kitne Aadmi The? Sabne SplitKar Kiya!</div> </div>
+</body>
+</html>

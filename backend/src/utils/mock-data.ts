@@ -1,6 +1,7 @@
 import { userModel } from "../models/User"
 import { groupModel } from "../models/Group"
-import { db } from "../config/database"
+import { getDB } from "../config/database"
+import { logger } from "./logger"
 
 export class MockDataService {
   async createMockUsers() {
@@ -10,6 +11,7 @@ export class MockDataService {
         name: "Demo User",
         password: "password123",
         phone: "+91-9876543210",
+        upi_id: "demouser@paytm",
         role: "user",
       },
       {
@@ -17,6 +19,7 @@ export class MockDataService {
         name: "Admin User",
         password: "password123",
         phone: "+91-9876543211",
+        upi_id: "adminuser@phonepe",
         role: "admin",
       },
       {
@@ -24,6 +27,7 @@ export class MockDataService {
         name: "Alice Johnson",
         password: "password123",
         phone: "+91-9876543212",
+        upi_id: "alice.johnson@gpay",
         role: "user",
       },
       {
@@ -31,6 +35,7 @@ export class MockDataService {
         name: "Bob Smith",
         password: "password123",
         phone: "+91-9876543213",
+        upi_id: "bobsmith@paytm",
         role: "user",
       },
       {
@@ -38,6 +43,7 @@ export class MockDataService {
         name: "Charlie Brown",
         password: "password123",
         phone: "+91-9876543214",
+        upi_id: "charlie.brown@phonepe",
         role: "user",
       },
     ]
@@ -47,16 +53,16 @@ export class MockDataService {
       try {
         const user = await userModel.create(userData)
         createdUsers.push(user)
-        console.log(`✅ Created user: ${user.email}`)
+        logger.info(`✅ Created user: ${user.email}`)
       } catch (error) {
         if (error instanceof Error && error.message.includes("already exists")) {
-          console.log(`⚠️  User already exists: ${userData.email}`)
+          logger.info(`⚠️  User already exists: ${userData.email}`)
           const existingUser = await userModel.findByEmail(userData.email)
           if (existingUser) {
             createdUsers.push(existingUser)
           }
         } else {
-          console.error(`❌ Failed to create user ${userData.email}:`, error)
+          logger.error(`❌ Failed to create user ${userData.email}:`, { error })
         }
       }
     }
@@ -66,7 +72,7 @@ export class MockDataService {
 
   async createMockGroups(users: any[]) {
     if (users.length < 3) {
-      console.log("⚠️  Need at least 3 users to create mock groups")
+      logger.warn("⚠️  Need at least 3 users to create mock groups")
       return []
     }
 
@@ -105,9 +111,9 @@ export class MockDataService {
       try {
         const group = await groupModel.create(groupData)
         createdGroups.push(group)
-        console.log(`✅ Created group: ${group.name}`)
+        logger.info(`✅ Created group: ${group.name}`)
       } catch (error) {
-        console.error(`❌ Failed to create group ${groupData.name}:`, error)
+        logger.error(`❌ Failed to create group ${groupData.name}:`, { error })
       }
     }
 
@@ -116,7 +122,7 @@ export class MockDataService {
 
   async createMockExpenses(groups: any[], users: any[]) {
     if (groups.length === 0 || users.length === 0) {
-      console.log("⚠️  Need groups and users to create mock expenses")
+      logger.warn("⚠️  Need groups and users to create mock expenses")
       return []
     }
 
@@ -162,7 +168,7 @@ export class MockDataService {
     const createdExpenses = []
     for (const expenseData of mockExpenses) {
       try {
-        const result = await db.transaction(async (client) => {
+        const result = await getDB().transaction(async (client) => {
           // Create expense
           const expenseResult = await client.query(
             `INSERT INTO expenses (description, amount, category, paid_by, group_id, date)
@@ -192,9 +198,9 @@ export class MockDataService {
         })
 
         createdExpenses.push(result)
-        console.log(`✅ Created expense: ${expenseData.description}`)
+        logger.info(`✅ Created expense: ${expenseData.description}`)
       } catch (error) {
-        console.error(`❌ Failed to create expense ${expenseData.description}:`, error)
+        logger.error(`❌ Failed to create expense ${expenseData.description}:`, { error })
       }
     }
 
@@ -202,15 +208,15 @@ export class MockDataService {
   }
 
   async setupMockData() {
-    console.log("🎭 Setting up mock data...")
+    logger.info("🎭 Setting up mock data...")
 
     try {
       const users = await this.createMockUsers()
       const groups = await this.createMockGroups(users)
       const expenses = await this.createMockExpenses(groups, users)
 
-      console.log("🎉 Mock data setup completed!")
-      console.log(`📊 Created: ${users.length} users, ${groups.length} groups, ${expenses.length} expenses`)
+      logger.info("🎉 Mock data setup completed!")
+      logger.info(`📊 Created: ${users.length} users, ${groups.length} groups, ${expenses.length} expenses`)
 
       return {
         users,
@@ -218,25 +224,25 @@ export class MockDataService {
         expenses,
       }
     } catch (error) {
-      console.error("❌ Mock data setup failed:", error)
+      logger.error("❌ Mock data setup failed:", { error })
       throw error
     }
   }
 
   async clearMockData() {
-    console.log("🧹 Clearing mock data...")
+    logger.info("🧹 Clearing mock data...")
 
     try {
-      await db.query("DELETE FROM expense_splits WHERE 1=1")
-      await db.query("DELETE FROM expenses WHERE 1=1")
-      await db.query("DELETE FROM group_members WHERE 1=1")
-      await db.query("DELETE FROM groups WHERE 1=1")
-      await db.query("DELETE FROM user_settings WHERE 1=1")
-      await db.query("DELETE FROM users WHERE email LIKE '%@demo.com'")
+      await getDB().query("DELETE FROM expense_splits WHERE 1=1")
+      await getDB().query("DELETE FROM expenses WHERE 1=1")
+      await getDB().query("DELETE FROM group_members WHERE 1=1")
+      await getDB().query("DELETE FROM groups WHERE 1=1")
+      await getDB().query("DELETE FROM user_settings WHERE 1=1")
+      await getDB().query("DELETE FROM users WHERE email LIKE '%@demo.com'")
 
-      console.log("✅ Mock data cleared successfully")
+      logger.info("✅ Mock data cleared successfully")
     } catch (error) {
-      console.error("❌ Failed to clear mock data:", error)
+      logger.error("❌ Failed to clear mock data:", { error })
       throw error
     }
   }

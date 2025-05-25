@@ -1,130 +1,97 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { apiClient } from "@/lib/api-client"
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 
 interface User {
   id: string
   email: string
   name: string
-  phone?: string
-  avatar_url?: string
-  role: string
-  is_verified: boolean
-  created_at: string
+  upiId?: string
+  isVerified: boolean
 }
 
 interface UserStats {
-  total_groups: number
-  total_friends: number
-  total_expenses: number
-  net_balance: number
+  total_groups: number;
+  total_friends: number;
+  total_expenses: number;
+  net_balance: number;
 }
 
 interface AuthContextType {
   user: User | null
   stats: UserStats | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (userData: any) => Promise<void>
+  login: (email: string, password: string) => Promise<boolean>
+  register: (userData: any) => Promise<boolean>
   logout: () => void
-  updateProfile: (updates: any) => Promise<void>
-  refreshProfile: () => Promise<void>
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    checkAuth()
+    // Check for existing session
+    const token = localStorage.getItem("auth_token")
+    if (token) {
+      // Validate token and set user
+      // For now, just set loading to false
+    }
+    setIsLoading(false)
   }, [])
 
-  const checkAuth = async () => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
-      if (token) {
-        apiClient.setToken(token)
-        const response = await apiClient.getProfile()
-        setUser(response.user)
-        setStats(response.stats || response.user?.stats)
+      setIsLoading(true)
+      // Mock login for now
+      const mockUser = {
+        id: "1",
+        email,
+        name: "Test User",
+        isVerified: true,
       }
+      setUser(mockUser)
+      localStorage.setItem("auth_token", "mock_token")
+      return true
     } catch (error) {
-      console.error("Auth check failed:", error)
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("auth_token")
-      }
+      console.error("Login error:", error)
+      return false
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
-  const login = async (email: string, password: string) => {
+  const register = async (userData: any): Promise<boolean> => {
     try {
-      const response = await apiClient.login({ email, password })
-      setUser(response.user)
-      setStats(response.user?.stats)
-      await refreshProfile()
+      setIsLoading(true)
+      // Mock registration
+      const mockUser = {
+        id: "1",
+        email: userData.email,
+        name: userData.name,
+        upiId: userData.upiId,
+        isVerified: false,
+      }
+      setUser(mockUser)
+      return true
     } catch (error) {
-      throw error
-    }
-  }
-
-  const register = async (userData: any) => {
-    try {
-      const response = await apiClient.register(userData)
-      setUser(response.user)
-      setStats(response.user?.stats)
-      await refreshProfile()
-    } catch (error) {
-      throw error
+      console.error("Registration error:", error)
+      return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const logout = () => {
-    apiClient.clearToken()
     setUser(null)
-    setStats(null)
+    localStorage.removeItem("auth_token")
   }
 
-  const updateProfile = async (updates: any) => {
-    try {
-      const response = await apiClient.updateProfile(updates)
-      setUser(response.user)
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const refreshProfile = async () => {
-    try {
-      const response = await apiClient.getProfile()
-      setUser(response.user)
-      setStats(response.stats || response.user?.stats)
-    } catch (error) {
-      console.error("Failed to refresh profile:", error)
-    }
-  }
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        stats,
-        loading,
-        login,
-        register,
-        logout,
-        updateProfile,
-        refreshProfile,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={{ user, stats, login, register, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

@@ -1,23 +1,154 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Users, Receipt, UserPlus, TestTube, LogIn } from "lucide-react"
+import { User, Users, Receipt, UserPlus, TestTube, LogIn, Loader2 } from "lucide-react"
 import Link from "next/link"
 
-// Import mock data
-import mockUsers from "@/data/mock-users.json"
-import mockGroups from "@/data/mock-groups.json"
-import mockExpenses from "@/data/mock-expenses.json"
-import mockFriends from "@/data/mock-friends.json"
+// Define types for mock data
+interface MockUser {
+  id: string
+  email: string
+  name: string
+  phone?: string
+  avatar_url?: string
+  role: string
+  is_verified: boolean
+  created_at: string
+  stats: {
+    total_groups: number
+    total_friends: number
+    total_expenses: number
+    net_balance: number
+  }
+}
+
+interface MockGroup {
+  id: string
+  name: string
+  description?: string
+  icon?: string
+  color?: string
+  currency?: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  member_count: number
+  total_expenses: number
+  user_balance: number
+  members: {
+    user_id: string;
+    role: string;
+    joined_at: string;
+  }[];
+}
+
+interface MockExpense {
+  id: string
+  group_id: string
+  created_by: string
+  title: string
+  description?: string
+  amount: number
+  currency?: string
+  category?: string
+  date: string
+  created_at: string
+  updated_at: string
+  split_type: string
+  participants: {
+    user_id: string;
+    amount?: number;
+    percentage?: number;
+  }[];
+}
+
+interface MockFriend {
+  id: string
+  user_id: string
+  friend_id: string
+  status: string
+  created_at: string
+  friend_details: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
+}
 
 export default function DemoPage() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [mockData, setMockData] = useState<{
+    users: MockUser[]
+    groups: MockGroup[]
+    expenses: MockExpense[]
+    friends: MockFriend[]
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND === "true"
+
+  useEffect(() => {
+    // Load mock data dynamically to avoid SSR issues
+    const loadMockData = async () => {
+      try {
+        const [usersRes, groupsRes, expensesRes, friendsRes] = await Promise.all([
+          import("@/data/mock-users.json"),
+          import("@/data/mock-groups.json"),
+          import("@/data/mock-expenses.json"),
+          import("@/data/mock-friends.json"),
+        ])
+
+        setMockData({
+          users: usersRes.default?.users || [],
+          groups: groupsRes.default?.groups || [],
+          expenses: expensesRes.default?.expenses || [],
+          friends: friendsRes.default?.friends || [],
+        })
+      } catch (error) {
+        console.error("Failed to load mock data:", error)
+        // Set empty arrays as fallback
+        setMockData({
+          users: [],
+          groups: [],
+          expenses: [],
+          friends: [],
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadMockData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading demo data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!mockData) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">Failed to load demo data</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const { users, groups, expenses, friends } = mockData
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -34,15 +165,15 @@ export default function DemoPage() {
 
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="groups">Groups</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="friends">Friends</TabsTrigger>
+          <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
+          <TabsTrigger value="groups">Groups ({groups.length})</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses ({expenses.length})</TabsTrigger>
+          <TabsTrigger value="friends">Friends ({friends.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {mockUsers.map((user) => (
+            {users.map((user) => (
               <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -59,13 +190,13 @@ export default function DemoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Balance:</span>
-                      <span className={user.balance >= 0 ? "text-green-600" : "text-red-600"}>
-                        ₹{Math.abs(user.balance).toFixed(2)}
+                      <span className={user.stats.net_balance >= 0 ? "text-green-600" : "text-red-600"}>
+                        ₹{Math.abs(user.stats.net_balance).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>UPI ID:</span>
-                      <span className="text-sm text-muted-foreground">{user.upiId}</span>
+                      <span>Phone:</span>
+                      <span className="text-sm text-muted-foreground">{user.phone || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Role:</span>
@@ -73,8 +204,8 @@ export default function DemoPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Status:</span>
-                      <Badge variant={user.isVerified ? "default" : "destructive"}>
-                        {user.isVerified ? "Verified" : "Unverified"}
+                      <Badge variant={user.is_verified ? "default" : "destructive"}>
+                        {user.is_verified ? "Verified" : "Unverified"}
                       </Badge>
                     </div>
                     <Link href="/auth/login">
@@ -92,7 +223,7 @@ export default function DemoPage() {
 
         <TabsContent value="groups" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {mockGroups.map((group) => (
+            {groups.map((group) => (
               <Card key={group.id}>
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -109,21 +240,18 @@ export default function DemoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Members:</span>
-                      <span>{group.memberIds.length}</span>
+                      <span>{group.member_count}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Expenses:</span>
-                      <span>₹{group.totalExpenses.toFixed(2)}</span>
+                      <span>₹{group.total_expenses.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Created:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(group.createdAt).toLocaleDateString()}
+                        {new Date(group.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <Badge variant="outline" className="w-fit">
-                      {group.category}
-                    </Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -133,7 +261,7 @@ export default function DemoPage() {
 
         <TabsContent value="expenses" className="space-y-4">
           <div className="grid gap-4">
-            {mockExpenses.map((expense) => (
+            {expenses.map((expense) => (
               <Card key={expense.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -142,15 +270,17 @@ export default function DemoPage() {
                         <Receipt className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{expense.description}</CardTitle>
+                        <CardTitle className="text-lg">{expense.title}</CardTitle>
                         <CardDescription>
-                          Paid by {mockUsers.find((u) => u.id === expense.paidBy)?.name}
+                          Paid by {users.find((u) => u.id === expense.created_by)?.name || "Unknown"}
                         </CardDescription>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold">₹{expense.amount.toFixed(2)}</div>
-                      <Badge variant="outline">{expense.category}</Badge>
+                      {expense.category && (
+                        <Badge variant="outline">{expense.category}</Badge>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -158,7 +288,7 @@ export default function DemoPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Split Type:</span>
-                      <Badge variant="secondary">{expense.splitType}</Badge>
+                      <Badge variant="secondary">{expense.split_type}</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Date:</span>
@@ -179,7 +309,7 @@ export default function DemoPage() {
 
         <TabsContent value="friends" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {mockFriends.map((friendship) => (
+            {friends.map((friendship) => (
               <Card key={friendship.id}>
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -188,9 +318,11 @@ export default function DemoPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {mockUsers.find((u) => u.id === friendship.friendId)?.name}
+                        {friendship.friend_details?.name || "Unknown"}
                       </CardTitle>
-                      <CardDescription>{mockUsers.find((u) => u.id === friendship.friendId)?.email}</CardDescription>
+                      <CardDescription>
+                        {friendship.friend_details?.email || "No email"}
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -205,7 +337,7 @@ export default function DemoPage() {
                     <div className="flex justify-between">
                       <span>Since:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(friendship.createdAt).toLocaleDateString()}
+                        {new Date(friendship.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

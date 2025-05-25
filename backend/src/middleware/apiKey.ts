@@ -6,22 +6,24 @@ export interface ApiKeyRequest extends Request {
 }
 
 // API Key validation middleware
-export const validateApiKey = (req: ApiKeyRequest, res: Response, next: NextFunction) => {
+export const validateApiKey = (req: ApiKeyRequest, res: Response, next: NextFunction): void => {
   const apiKey = req.headers["x-api-key"] as string
   const allowedKeys = process.env.ALLOWED_API_KEYS?.split(",") || []
 
   if (!apiKey) {
-    return res.status(401).json({
+    res.status(401).json({
       error: "Unauthorized",
       message: "API key is required. Please provide X-API-Key header.",
     })
+    return
   }
 
   if (!allowedKeys.includes(apiKey)) {
-    return res.status(403).json({
+    res.status(403).json({
       error: "Forbidden",
       message: "Invalid API key provided.",
     })
+    return
   }
 
   req.apiKey = apiKey
@@ -37,7 +39,7 @@ export const createApiKeyRateLimit = () => {
     windowMs,
     max,
     keyGenerator: (req: ApiKeyRequest) => {
-      return req.apiKey || req.ip
+      return req.apiKey || req.ip || "unknown"
     },
     message: {
       error: "Too Many Requests",
@@ -49,7 +51,7 @@ export const createApiKeyRateLimit = () => {
 }
 
 // Logging middleware for API key usage
-export const logApiKeyUsage = (req: ApiKeyRequest, res: Response, next: NextFunction) => {
+export const logApiKeyUsage = (req: ApiKeyRequest, res: Response, next: NextFunction): void => {
   const timestamp = new Date().toISOString()
   const method = req.method
   const url = req.originalUrl

@@ -1,12 +1,9 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: splitkar-postgres
     environment:
-      POSTGRES_DB: splitkar_db
+      POSTGRES_DB: splitkar
       POSTGRES_USER: splitkar_user
       POSTGRES_PASSWORD: splitkar_password
     ports:
@@ -14,60 +11,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U splitkar_user -d splitkar_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - splitkar-network
 
-  # Backend API
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: splitkar-backend
+  redis:
+    image: redis:7-alpine
+    container_name: splitkar-redis
     ports:
-      - "5000:5000"
-    env_file:
-      - .env  # Uses centralized .env file
-    environment:
-      # Override database URL for Docker network
-      - DATABASE_URL=postgresql://splitkar_user:splitkar_password@postgres:5432/splitkar_db
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    networks:
-      - splitkar-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Frontend App
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: splitkar-frontend
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env  # Uses centralized .env file
-    environment:
-      # Override API URL for Docker network
-      - NEXT_PUBLIC_API_URL=http://backend:5000/api
-    depends_on:
-      - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - "6379:6379"
     networks:
       - splitkar-network
 

@@ -317,7 +317,7 @@ export default function DemoAccountsPage() {
                         <TabsContent value="friends" className="space-y-2">
                           {accountData.friends.length > 0 ? (
                             accountData.friends.map((friend) => {
-                              const friendUser = mockUsers.users.find((u) => u.id === friend.friend_user_id)
+                              const friendUser = mockUsers.users.find((u) => u.id === friend.friend_id)
                               return (
                                 <div key={friend.id} className="p-2 bg-white rounded border text-sm">
                                   <div className="flex items-center gap-2">

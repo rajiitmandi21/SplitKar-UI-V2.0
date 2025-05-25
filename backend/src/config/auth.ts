@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"
-import bcrypt from "bcryptjs"
+import crypto from "crypto"
 
 export interface JWTPayload {
   userId: string
@@ -12,20 +12,25 @@ export interface JWTPayload {
 export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key"
   private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d"
-  private readonly SALT_ROUNDS = 12
 
+  // Simple hash function using Node's crypto module instead of bcrypt
   async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, this.SALT_ROUNDS)
+    const salt = crypto.randomBytes(16).toString("hex")
+    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex")
+    return `${salt}:${hash}`
   }
 
-  async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(password, hashedPassword)
+  // Compare password with hash
+  async comparePassword(password: string, storedHash: string): Promise<boolean> {
+    const [salt, hash] = storedHash.split(":")
+    const calculatedHash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex")
+    return hash === calculatedHash
   }
 
   generateToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
     return jwt.sign(payload, this.JWT_SECRET, {
       expiresIn: this.JWT_EXPIRES_IN,
-    })
+    } as jwt.SignOptions)
   }
 
   verifyToken(token: string): JWTPayload {

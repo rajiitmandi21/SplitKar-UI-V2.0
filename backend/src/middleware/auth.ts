@@ -1,53 +1,56 @@
 import type { Request, Response, NextFunction } from "express"
-import { authService, type JWTPayload } from "../config/auth"
+import jwt from "jsonwebtoken"
+import { logger } from "../utils/logger"
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 
 export interface AuthenticatedRequest extends Request {
-  user?: JWTPayload
+  user?: {
+    id: string
+    userId: string
+    email: string
+    role: string
+  }
 }
 
-export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  const token = req.header("Authorization")?.replace("Bearer ", "")
+
+  if (!token) {
+    res.status(401).json({ error: "Access denied. No token provided." })
+    return
+  }
+
   try {
-    const token = authService.extractTokenFromHeader(req.headers.authorization)
-    const payload = authService.verifyToken(token)
-    req.user = payload
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+    req.user = {
+      id: decoded.userId || decoded.id,
+      userId: decoded.userId || decoded.id,
+      email: decoded.email,
+      role: decoded.role || "user",
+    }
     next()
   } catch (error) {
-    return res.status(401).json({
-      error: "Unauthorized",
-      message: error instanceof Error ? error.message : "Authentication failed",
-    })
+    logger.error("Token verification failed:", error)
+    res.status(401).json({ error: "Invalid token" })
   }
 }
 
-export const authorize = (roles: string[] = []) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireRole = (roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized", message: "User not authenticated" })
+      res.status(401).json({ error: "Authentication required" })
+      return
     }
 
-    if (roles.length > 0 && !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: "Forbidden", message: "Insufficient permissions" })
+    if (!roles.includes(req.user.role)) {
+      res.status(403).json({ error: "Insufficient permissions" })
+      return
     }
 
     next()
   }
 }
 
-export const validateOwnership = (resourceUserIdField = "userId") => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" })
-    }
-
-    const resourceUserId = req.params[resourceUserIdField] || req.body[resourceUserIdField]
-
-    if (req.user.role !== "admin" && req.user.userId !== resourceUserId) {
-      return res.status(403).json({
-        error: "Forbidden",
-        message: "You can only access your own resources",
-      })
-    }
-
-    next()
-  }
-}
+// Alias for backward compatibility
+export const authenticateToken = authenticate

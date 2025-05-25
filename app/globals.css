@@ -36,43 +36,69 @@
   }
 }
 
-/* Custom scrollbar */
+/* Enhanced scrollbar for both light and dark modes */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 3px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
-/* Smooth transitions */
-* {
-  transition: all 0.2s ease-in-out;
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #2a2a2a;
 }
 
-/* Custom gradient backgrounds */
+.dark ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Enhanced smooth transitions with better performance */
+* {
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, 
+              box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Enhanced gradient backgrounds with better contrast */
 .gradient-bg-primary {
-  background: linear-gradient(135deg, #2dd4c4 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #6750A4 0%, #4F378B 100%);
 }
 
 .gradient-bg-secondary {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  background: linear-gradient(135deg, #625B71 0%, #4A4458 100%);
 }
 
-/* Custom animations */
+/* Enhanced Material Design animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -81,42 +107,81 @@
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes bounce-gentle {
-  0%,
-  100% {
+  0%, 100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
   }
 }
 
 .animate-bounce-gentle {
-  animation: bounce-gentle 2s infinite;
+  animation: bounce-gentle 3s ease-in-out infinite;
 }
 
-/* Custom card hover effects */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced card hover effects with Material Design elevation */
 .card-hover {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* Indian cultural elements */
+.dark .card-hover:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced Material Design patterns */
 .rangoli-pattern {
-  background-image: radial-gradient(circle at 25% 25%, #2dd4c4 2px, transparent 2px),
-    radial-gradient(circle at 75% 75%, #ff6b6b 2px, transparent 2px);
-  background-size: 20px 20px;
-  opacity: 0.1;
+  background-image: radial-gradient(circle at 25% 25%, #6750A4 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, #7D5260 2px, transparent 2px);
+  background-size: 24px 24px;
+  opacity: 0.08;
 }
 
-/* Mobile-first responsive utilities */
+.dark .rangoli-pattern {
+  background-image: radial-gradient(circle at 25% 25%, #D0BCFF 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, #E7B3C3 2px, transparent 2px);
+  opacity: 0.05;
+}
+
+/* Enhanced mobile-first responsive utilities */
 @media (max-width: 640px) {
   .mobile-padding {
     padding-left: 1rem;
@@ -126,40 +191,71 @@
   .mobile-text-sm {
     font-size: 0.875rem;
   }
+
+  .mobile-spacing {
+    margin-bottom: 1rem;
+  }
 }
 
-/* Custom focus states for accessibility */
+/* Enhanced focus states for better accessibility */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark focus:ring-offset-2 focus:ring-offset-surface dark:focus:ring-offset-surface-dark;
 }
 
-/* UPI-specific styling */
+/* Enhanced button focus states */
+button:focus-visible,
+[role="button"]:focus-visible {
+  @apply focus-ring;
+}
+
+/* Enhanced input focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  @apply focus-ring;
+}
+
+/* Enhanced UPI-specific styling with better contrast */
 .upi-button {
-  background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
   font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .upi-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 200, 81, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
-/* Indian rupee symbol styling */
+.upi-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Enhanced rupee symbol styling */
 .rupee-symbol {
   font-family: "Poppins", sans-serif;
   font-weight: 600;
+  font-feature-settings: "tnum";
 }
 
-/* Custom loading states */
+/* Enhanced loading states with better animations */
 .loading-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.dark .loading-shimmer {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
 }
 
 @keyframes shimmer {
@@ -171,19 +267,116 @@
   }
 }
 
-/* Success states */
+/* Enhanced success states with better animations */
 .success-pulse {
-  animation: pulse-green 2s infinite;
+  animation: pulse-green 2.5s ease-in-out infinite;
 }
 
 @keyframes pulse-green {
   0% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Enhanced error states */
+.error-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* Enhanced Material Design ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Enhanced glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced selection styles */
+::selection {
+  background: #6750A4;
+  color: white;
+}
+
+.dark ::selection {
+  background: #D0BCFF;
+  color: #1C1B1F;
+}
+
+/* Enhanced print styles */
+@media print {
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Enhanced high contrast mode support */
+@media (prefers-contrast: high) {
+  .card-hover:hover {
+    border: 2px solid currentColor;
+  }
+  
+  button, [role="button"] {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Enhanced reduced transparency for accessibility */
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  .dark .glass {
+    background: rgba(0, 0, 0, 0.9);
   }
 }
