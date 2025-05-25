@@ -1,0 +1,98 @@
+{
+  "rules": [
+    // === INCLUDE: Core Application Code ===
+    { "pattern": "app/**/*.{ts,tsx,js,jsx}", "context": "include" },
+    { "pattern": "components/**/*.{ts,tsx}", "context": "include" },
+    { "pattern": "lib/**/*.{ts,js}", "context": "include" },
+    { "pattern": "utils/**/*.{ts,js}", "context": "include" },
+    { "pattern": "types/**/*.{ts,d.ts}", "context": "include" },
+    { "pattern": "hooks/**/*.{ts,tsx}", "context": "include" },
+    
+    // === INCLUDE: Backend Source Code ===
+    { "pattern": "backend/src/**/*.{ts,js}", "context": "include" },
+    { "pattern": "backend/src/**/*.sql", "context": "include" },
+    
+    // === INCLUDE: Configuration & Documentation ===
+    { "pattern": "docs/**/*.md", "context": "include" },
+    { "pattern": "*.{json,js,ts}", "context": "include" },
+    { "pattern": "tailwind.config.{js,ts}", "context": "include" },
+    { "pattern": "next.config.{js,mjs}", "context": "include" },
+    { "pattern": "tsconfig.json", "context": "include" },
+    { "pattern": "package.json", "context": "include" },
+    
+    // === EXCLUDE: Test Files ===
+    { "pattern": "**/*.test.{ts,tsx,js,jsx}", "context": "exclude" },
+    { "pattern": "**/*.spec.{ts,tsx,js,jsx}", "context": "exclude" },
+    { "pattern": "**/__tests__/**", "context": "exclude" },
+    { "pattern": "**/test/**", "context": "exclude" },
+    { "pattern": "jest.config.*", "context": "exclude" },
+    
+    // === EXCLUDE: Build & Dependencies ===
+    { "pattern": "node_modules/**", "context": "exclude" },
+    { "pattern": ".next/**", "context": "exclude" },
+    { "pattern": "dist/**", "context": "exclude" },
+    { "pattern": "build/**", "context": "exclude" },
+    { "pattern": "out/**", "context": "exclude" },
+    { "pattern": "coverage/**", "context": "exclude" },
+    
+    // === EXCLUDE: Temporary & Generated Files ===
+    { "pattern": "*.log", "context": "exclude" },
+    { "pattern": "logs/**", "context": "exclude" },
+    { "pattern": ".cache/**", "context": "exclude" },
+    { "pattern": "tmp/**", "context": "exclude" },
+    { "pattern": "temp/**", "context": "exclude" },
+    { "pattern": "*.tsbuildinfo", "context": "exclude" },
+    
+    // === EXCLUDE: IDE & OS Files ===
+    { "pattern": ".vscode/**", "context": "exclude" },
+    { "pattern": ".idea/**", "context": "exclude" },
+    { "pattern": ".DS_Store", "context": "exclude" },
+    { "pattern": "Thumbs.db", "context": "exclude" },
+    
+    // === BLOCK: Sensitive Files ===
+    { "pattern": ".env*", "context": "block" },
+    { "pattern": "*.key", "context": "block" },
+    { "pattern": "*.pem", "context": "block" },
+    { "pattern": "*.p12", "context": "block" },
+    { "pattern": "secrets/**", "context": "block" },
+    { "pattern": "credentials/**", "context": "block" },
+    
+    // === EXCLUDE: Version Control ===
+    { "pattern": ".git/**", "context": "exclude" },
+    { "pattern": ".gitignore", "context": "exclude" },
+    
+    // === EXCLUDE: Package Manager Files ===
+    { "pattern": "package-lock.json", "context": "exclude" },
+    { "pattern": "yarn.lock", "context": "exclude" },
+    { "pattern": "pnpm-lock.yaml", "context": "exclude" }
+  ],
+  
+  "context": {
+    "project": "SplitKar - Expense Splitting Application",
+    "description": "Full-stack TypeScript application for managing shared expenses with Next.js frontend and Express.js backend",
+    "architecture": {
+      "frontend": "Next.js 14+ with App Router, TypeScript, Tailwind CSS, shadcn/ui",
+      "backend": "Express.js with TypeScript, PostgreSQL, Redis, JWT authentication",
+      "deployment": "Vercel (frontend), Node.js environment (backend)"
+    },
+    "key_features": [
+      "User authentication and group management",
+      "Expense splitting with multiple calculation methods",
+      "Real-time notifications and settlement tracking",
+      "Analytics dashboard and mobile-responsive design"
+    ],
+    "coding_standards": {
+      "typescript": "Strict mode enabled, prefer interfaces over types",
+      "react": "Functional components with hooks, Server Components preferred",
+      "api": "RESTful conventions, proper error handling, JWT authentication",
+      "styling": "Tailwind CSS with custom design system",
+      "testing": "Jest for backend, React Testing Library for frontend"
+    },
+    "file_conventions": {
+      "components": "PascalCase (UserProfile.tsx)",
+      "pages": "kebab-case (user-profile.tsx)",
+      "utilities": "camelCase (formatCurrency.ts)",
+      "types": "PascalCase (UserProfile.ts)"
+    }
+  }
+}
