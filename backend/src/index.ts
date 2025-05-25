@@ -1,10 +1,84 @@
-import dotenv from "dotenv"
-dotenv.config()
+import express from "express"
+import cors from "cors"
 
-import { startServer } from "./server"
+const app = express()
+const PORT = process.env.PORT || 5001
 
-// Start the server
-startServer().catch((error) => {
-  console.error("Failed to start server:", error)
-  process.exit(1)
+// Middleware
+app.use(cors())
+app.use(express.json())
+
+// Health check
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    port: PORT,
+  })
+})
+
+// Auth routes
+app.post("/api/auth/register", (req, res) => {
+  const { name, email, password, phone, upi_id } = req.body
+
+  console.log("📧 Registration Email (Development Mode):")
+  console.log("To:", email)
+  console.log("Subject: Verify your SplitKar account")
+  console.log("Content:")
+  console.log(`Hi ${name},`)
+  console.log("Welcome to SplitKar! Please verify your account.")
+  console.log("Verification link: http://localhost:3000/auth/verify?token=mock-token")
+  console.log("---")
+
+  res.json({
+    success: true,
+    message: "Registration successful! Check your email for verification.",
+    user: {
+      id: "mock-user-id",
+      name,
+      email,
+      verified: false,
+    },
+  })
+})
+
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body
+
+  res.json({
+    success: true,
+    message: "Login successful!",
+    token: "mock-jwt-token",
+    user: {
+      id: "mock-user-id",
+      name: "Test User",
+      email,
+      verified: true,
+    },
+  })
+})
+
+// Test email endpoint
+app.post("/api/test/email", (req, res) => {
+  const { email } = req.body
+
+  console.log("📧 Test Email (Development Mode):")
+  console.log("To:", email)
+  console.log("Subject: Test Email from SplitKar")
+  console.log("Content: This is a test email to verify the email service is working.")
+  console.log("---")
+
+  res.json({
+    success: true,
+    message: "Test email sent! Check your backend console for the email content.",
+    verificationUrl: "http://localhost:3000/auth/verify?token=test-token",
+  })
+})
+
+// Start server
+app.listen(PORT, () => {
+  console.log("🚀 Server started successfully")
+  console.log(`Port: ${PORT}`)
+  console.log(`Health check: http://localhost:${PORT}/health`)
+  console.log("📧 Email service running in development mode (console logging)")
 })
