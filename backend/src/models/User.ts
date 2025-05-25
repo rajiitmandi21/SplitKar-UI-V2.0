@@ -1,4 +1,4 @@
-import { getDB } from "../config/database"
+import { db } from "../config/database"
 import { authService } from "../config/auth"
 import crypto from "crypto"
 
@@ -52,7 +52,7 @@ export class UserModel {
     const verificationToken = crypto.randomBytes(32).toString("hex")
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    const result = await getDB().query(
+    const result = await db.query(
       `INSERT INTO users (email, name, phone, upi_id, password_hash, role, verification_token, verification_token_expires)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
@@ -63,22 +63,22 @@ export class UserModel {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const result = await getDB().query("SELECT * FROM users WHERE email = $1", [email])
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [email])
     return result.rows[0] || null
   }
 
   async findByUpiId(upiId: string): Promise<User | null> {
-    const result = await getDB().query("SELECT * FROM users WHERE upi_id = $1", [upiId])
+    const result = await db.query("SELECT * FROM users WHERE upi_id = $1", [upiId])
     return result.rows[0] || null
   }
 
   async findById(id: string): Promise<User | null> {
-    const result = await getDB().query("SELECT * FROM users WHERE id = $1", [id])
+    const result = await db.query("SELECT * FROM users WHERE id = $1", [id])
     return result.rows[0] || null
   }
 
   async verifyEmail(token: string): Promise<User | null> {
-    const result = await getDB().query(
+    const result = await db.query(
       `UPDATE users 
        SET is_verified = true, verification_token = NULL, verification_token_expires = NULL, updated_at = NOW()
        WHERE verification_token = $1 AND verification_token_expires > NOW()
@@ -93,7 +93,7 @@ export class UserModel {
     const resetToken = crypto.randomBytes(32).toString("hex")
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
-    const result = await getDB().query(
+    const result = await db.query(
       `UPDATE users 
        SET password_reset_token = $1, password_reset_expires = $2, updated_at = NOW()
        WHERE email = $3 AND is_verified = true
@@ -107,7 +107,7 @@ export class UserModel {
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
     const passwordHash = await authService.hashPassword(newPassword)
 
-    const result = await getDB().query(
+    const result = await db.query(
       `UPDATE users 
        SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL, updated_at = NOW()
        WHERE password_reset_token = $2 AND password_reset_expires > NOW()
@@ -137,7 +137,7 @@ export class UserModel {
     const setClause = updateFields.map((field, index) => `${field} = $${index + 2}`).join(", ")
     const values = [id, ...updateFields.map((field) => updates[field as keyof User])]
 
-    const result = await getDB().query(`UPDATE users SET ${setClause}, updated_at = NOW() WHERE id = $1 RETURNING *`, values)
+    const result = await db.query(`UPDATE users SET ${setClause}, updated_at = NOW() WHERE id = $1 RETURNING *`, values)
 
     if (result.rows.length === 0) {
       throw new Error("User not found")
@@ -147,7 +147,7 @@ export class UserModel {
   }
 
   async getStats(userId: string): Promise<any> {
-    const result = await getDB().query(
+    const result = await db.query(
       `SELECT 
         COUNT(DISTINCT gm.group_id) as total_groups,
         COUNT(DISTINCT e.id) as total_expenses,
