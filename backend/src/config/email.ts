@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer"
 import { google } from "googleapis"
+import { logger } from "../utils/logger"
+import type SMTPTransport from "nodemailer/lib/smtp-transport"
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null
@@ -10,7 +12,7 @@ class EmailService {
     this.initializeTransporter()
   }
 
-  private initializeGoogleAuth() {
+  private initializeGoogleAuth(): void {
     try {
       // Create JWT client using service account credentials
       const jwtClient = new google.auth.JWT(
@@ -24,64 +26,64 @@ class EmailService {
       // Initialize Gmail API
       this.gmail = google.gmail({ version: "v1", auth: jwtClient })
 
-      console.log("✅ Google Service Account initialized successfully")
+      logger.info("✅ Google Service Account initialized successfully")
     } catch (error) {
-      console.error("❌ Failed to initialize Google Service Account:", error)
+      logger.error("❌ Failed to initialize Google Service Account", { error })
     }
   }
 
-  private async initializeTransporter() {
+  private async initializeTransporter(): Promise<void> {
     try {
-      // Create OAuth2 client for nodemailer
-      const oauth2Client = new google.auth.OAuth2(
-        process.env.CLIENT_ID,
-        undefined, // No client secret needed for service account
-        undefined, // No redirect URI needed
-      )
+      // Try OAuth2 first if we have all required credentials
+      if (process.env.CLIENT_EMAIL && process.env.PRIVATE_KEY && process.env.CLIENT_ID) {
+        const oauth2Client = new google.auth.OAuth2(process.env.CLIENT_ID, undefined, undefined)
 
-      // Set service account credentials
-      oauth2Client.setCredentials({
-        type: "service_account",
-        project_id: process.env.PROJECT_ID,
-        private_key_id: process.env.PRIVATE_KEY_ID,
-        private_key: process.env.PRIVATE_KEY?.replace(/\\n/g, "\n"),
-        client_email: process.env.CLIENT_EMAIL,
-        client_id: process.env.CLIENT_ID,
-        auth_uri: process.env.AUTH_URI,
-        token_uri: process.env.TOKEN_URI,
-        auth_provider_x509_cert_url: process.env.AUTH_PROVIDER_X509_CERT_URL,
-        client_x509_cert_url: process.env.CLIENT_X509_CERT_URL,
-        universe_domain: process.env.UNIVERSE_DOMAIN || "googleapis.com",
-      })
+        // Set credentials for service account
+        oauth2Client.setCredentials({
+          private_key: process.env.PRIVATE_KEY?.replace(/\\n/g, "\n"),
+          client_email: process.env.CLIENT_EMAIL,
+          client_id: process.env.CLIENT_ID,
+          private_key_id: process.env.PRIVATE_KEY_ID,
+        } as any)
 
-      // Get access token
-      const accessToken = await oauth2Client.getAccessToken()
+        try {
+          const accessToken = await oauth2Client.getAccessToken()
 
-      this.transporter = nodemailer.createTransporter({
-        service: "gmail",
-        auth: {
-          type: "OAuth2",
-          user: process.env.CLIENT_EMAIL, // Use service account email
-          clientId: process.env.CLIENT_ID,
-          clientSecret: undefined, // Not needed for service account
-          refreshToken: undefined, // Not needed for service account
-          accessToken: accessToken.token,
-        },
-      })
+          const transportOptions: SMTPTransport.Options = {
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            auth: {
+              type: "OAuth2",
+              user: process.env.CLIENT_EMAIL,
+              clientId: process.env.CLIENT_ID,
+              clientSecret: undefined,
+              refreshToken: undefined,
+              accessToken: accessToken.token || undefined,
+            },
+          }
 
-      console.log("✅ Email transporter initialized successfully")
+          this.transporter = nodemailer.createTransport(transportOptions)
+          await this.transporter.verify()
+          logger.info("✅ Email transporter initialized with OAuth2")
+          return
+        } catch (oauthError) {
+          logger.warn("OAuth2 setup failed, falling back to SMTP", { error: oauthError })
+        }
+      }
+
+      // Fallback to simple SMTP
+      this.initializeFallbackTransporter()
     } catch (error) {
-      console.error("❌ Failed to initialize email transporter:", error)
-
-      // Fallback to simple SMTP if OAuth fails
+      logger.error("❌ Failed to initialize email transporter", { error })
       this.initializeFallbackTransporter()
     }
   }
 
-  private initializeFallbackTransporter() {
+  private initializeFallbackTransporter(): void {
     try {
       // Simple SMTP configuration as fallback
-      this.transporter = nodemailer.createTransporter({
+      const fallbackOptions: SMTPTransport.Options = {
         host: "smtp.gmail.com",
         port: 587,
         secure: false,
@@ -89,15 +91,17 @@ class EmailService {
           user: process.env.CLIENT_EMAIL,
           pass: process.env.GMAIL_APP_PASSWORD, // App-specific password if available
         },
-      })
+      }
 
-      console.log("⚠️ Using fallback SMTP transporter")
+      this.transporter = nodemailer.createTransport(fallbackOptions)
+
+      logger.warn("⚠️ Using fallback SMTP transporter")
     } catch (error) {
-      console.error("❌ Failed to initialize fallback transporter:", error)
+      logger.error("❌ Failed to initialize fallback transporter", { error })
     }
   }
 
-  async sendVerificationEmail(email: string, name: string, verificationToken: string) {
+  async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<boolean> {
     const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify?token=${verificationToken}`
 
     const mailOptions = {
@@ -174,15 +178,15 @@ class EmailService {
       }
 
       await this.transporter.sendMail(mailOptions)
-      console.log(`✅ Verification email sent to ${email}`)
+      logger.info(`✅ Verification email sent to ${email}`)
       return true
     } catch (error) {
-      console.error("❌ Failed to send verification email:", error)
+      logger.error("❌ Failed to send verification email", { error })
       throw new Error("Failed to send verification email")
     }
   }
 
-  async sendPasswordResetEmail(email: string, name: string, resetToken: string) {
+  async sendPasswordResetEmail(email: string, name: string, resetToken: string): Promise<boolean> {
     const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`
 
     const mailOptions = {
@@ -259,15 +263,15 @@ class EmailService {
       }
 
       await this.transporter.sendMail(mailOptions)
-      console.log(`✅ Password reset email sent to ${email}`)
+      logger.info(`✅ Password reset email sent to ${email}`)
       return true
     } catch (error) {
-      console.error("❌ Failed to send password reset email:", error)
+      logger.error("❌ Failed to send password reset email", { error })
       throw new Error("Failed to send password reset email")
     }
   }
 
-  async sendWelcomeEmail(email: string, name: string) {
+  async sendWelcomeEmail(email: string, name: string): Promise<boolean> {
     const mailOptions = {
       from: `"SplitKar" <${process.env.CLIENT_EMAIL}>`,
       to: email,
@@ -345,10 +349,10 @@ class EmailService {
       }
 
       await this.transporter.sendMail(mailOptions)
-      console.log(`✅ Welcome email sent to ${email}`)
+      logger.info(`✅ Welcome email sent to ${email}`)
       return true
     } catch (error) {
-      console.error("❌ Failed to send welcome email:", error)
+      logger.error("❌ Failed to send welcome email", { error })
       // Don't throw error for welcome email as it's not critical
       return false
     }
@@ -362,10 +366,10 @@ class EmailService {
       }
 
       await this.transporter.verify()
-      console.log("✅ Email service connection verified")
+      logger.info("✅ Email service connection verified")
       return true
     } catch (error) {
-      console.error("❌ Email service connection failed:", error)
+      logger.error("❌ Email service connection failed", { error })
       return false
     }
   }

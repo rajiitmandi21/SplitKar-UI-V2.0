@@ -1,27 +1,18 @@
 import { Router } from "express"
 import { authController } from "../controllers/authController"
-import { authenticateToken } from "../middleware/auth"
+import { authenticate } from "../middleware/auth"
 
 const router = Router()
 
 // Public routes
-router.post("/register", authController.register)
-router.post("/login", authController.login)
-router.post("/verify-email", authController.verifyEmail)
-router.post("/forgot-password", authController.forgotPassword)
-router.post("/reset-password", authController.resetPassword)
+router.post("/register", authController.register.bind(authController))
+router.post("/verify-email", authController.verifyEmail.bind(authController))
+router.post("/login", authController.login.bind(authController))
+router.post("/forgot-password", authController.forgotPassword.bind(authController))
+router.post("/reset-password", authController.resetPassword.bind(authController))
 
 // Protected routes
-router.get("/profile", authenticateToken, authController.getProfile)
-router.put("/profile", authenticateToken, authController.updateProfile)
-
-// Health check route
-router.get("/health", (req, res) => {
-  res.json({
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    service: "auth",
-  })
-})
+router.get("/profile", authenticate, authController.getProfile.bind(authController))
+router.put("/profile", authenticate, authController.updateProfile.bind(authController))
 
 export default router

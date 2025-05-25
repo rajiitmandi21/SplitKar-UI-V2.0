@@ -1,18 +1,31 @@
 import { Router } from "express"
-import { groupController } from "../controllers/groupController"
+import {
+  createGroup,
+  getUserGroups,
+  getGroupById,
+  updateGroupById,
+  deleteGroupById,
+  addUserToGroup,
+  removeUserFromGroup,
+} from "../controllers/groupController"
 import { authenticate } from "../middleware/auth"
+import { validateApiKey } from "../middleware/apiKey"
 
 const router = Router()
 
-// All group routes require authentication
+// Apply API key validation to all routes
+router.use(validateApiKey)
+
+// Apply authentication to all routes
 router.use(authenticate)
 
-router.post("/", groupController.create)
-router.get("/", groupController.getUserGroups)
-router.get("/:groupId", groupController.getGroup)
-router.post("/:groupId/members", groupController.addMember)
-router.delete("/:groupId/members/:userId", groupController.removeMember)
-router.put("/:groupId", groupController.updateGroup)
-router.delete("/:groupId", groupController.deleteGroup)
+// Group routes
+router.post("/", createGroup)
+router.get("/", getUserGroups)
+router.get("/:id", getGroupById)
+router.put("/:id", updateGroupById)
+router.delete("/:id", deleteGroupById)
+router.post("/:id/members", addUserToGroup)
+router.delete("/:id/members/:userId", removeUserFromGroup)
 
 export default router

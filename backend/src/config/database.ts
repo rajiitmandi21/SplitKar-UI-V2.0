@@ -1,4 +1,5 @@
-import { Pool } from "pg"
+import { Pool, type PoolClient } from "pg"
+import { logger } from "../utils/logger"
 
 class Database {
   private pool: Pool
@@ -17,7 +18,7 @@ class Database {
       throw new Error("DATABASE_URL must be in format: postgres://user:pwd@host.com:port/xyz?sslmode=require")
     }
 
-    console.log("🔗 Connecting to database...")
+    logger.info("🔗 Connecting to database...")
 
     this.pool = new Pool({
       connectionString: databaseUrl,
@@ -28,12 +29,12 @@ class Database {
     })
 
     this.pool.on("connect", () => {
-      console.log("✅ Database client connected")
+      logger.info("✅ Database client connected")
       this.isConnected = true
     })
 
     this.pool.on("error", (err) => {
-      console.error("❌ Unexpected error on idle client", err)
+      logger.error("❌ Unexpected error on idle client", { error: err.message, stack: err.stack })
       this.isConnected = false
     })
 
@@ -41,17 +42,18 @@ class Database {
     this.testConnection()
   }
 
-  private async testConnection() {
+  private async testConnection(): Promise<void> {
     try {
       const client = await this.pool.connect()
       const result = await client.query("SELECT NOW() as current_time, version() as pg_version")
-      console.log("✅ Database connected successfully")
-      console.log(`📅 Server time: ${result.rows[0].current_time}`)
-      console.log(`🐘 PostgreSQL version: ${result.rows[0].pg_version.split(" ")[0]}`)
+      logger.info("✅ Database connected successfully", {
+        serverTime: result.rows[0].current_time,
+        pgVersion: result.rows[0].pg_version.split(" ")[0],
+      })
       client.release()
       this.isConnected = true
     } catch (error) {
-      console.error("❌ Database connection failed:", error)
+      logger.error("❌ Database connection failed", { error: error instanceof Error ? error.message : "Unknown error" })
       this.isConnected = false
       throw error
     }
@@ -63,33 +65,70 @@ class Database {
     }
 
     const start = Date.now()
+    const queryId = Math.random().toString(36).substring(7)
+
+    logger.debug("🔍 Executing query", {
+      queryId,
+      query: text.substring(0, 100) + (text.length > 100 ? "..." : ""),
+      params: params ? params.length : 0,
+    })
+
     try {
       const result = await this.pool.query(text, params)
       const duration = Date.now() - start
 
       // Log slow queries (> 1000ms)
       if (duration > 1000) {
-        console.warn(`🐌 Slow query detected (${duration}ms):`, text.substring(0, 100))
+        logger.warn("🐌 Slow query detected", {
+          queryId,
+          duration: `${duration}ms`,
+          query: text.substring(0, 100),
+          rowCount: result.rowCount,
+        })
+      } else {
+        logger.debug("✅ Query completed", {
+          queryId,
+          duration: `${duration}ms`,
+          rowCount: result.rowCount,
+        })
       }
 
       return result
     } catch (error) {
-      console.error("❌ Database query error:", error)
-      console.error("Query:", text)
-      console.error("Params:", params)
+      logger.error("❌ Database query error", {
+        queryId,
+        error: error instanceof Error ? error.message : "Unknown error",
+        query: text.substring(0, 100),
+        params: params ? params.length : 0,
+      })
       throw error
     }
   }
 
-  async getClient() {
+  async getClient(): Promise<PoolClient> {
     return await this.pool.connect()
   }
 
-  async close() {
-    console.log("🔌 Closing database connection...")
+  async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect()
+    try {
+      await client.query("BEGIN")
+      const result = await callback(client)
+      await client.query("COMMIT")
+      return result
+    } catch (error) {
+      await client.query("ROLLBACK")
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  async close(): Promise<void> {
+    logger.info("🔌 Closing database connection...")
     await this.pool.end()
     this.isConnected = false
-    console.log("✅ Database connection closed")
+    logger.info("✅ Database connection closed")
   }
 
   // Health check method
@@ -105,7 +144,7 @@ class Database {
       `)
       client.release()
 
-      return {
+      const healthData = {
         status: "healthy",
         details: {
           connected: true,
@@ -118,8 +157,11 @@ class Database {
           pool_waiting: this.pool.waitingCount,
         },
       }
+
+      logger.debug("📊 Database health check", healthData.details)
+      return healthData
     } catch (error) {
-      return {
+      const healthData = {
         status: "unhealthy",
         details: {
           connected: false,
@@ -127,6 +169,9 @@ class Database {
           timestamp: new Date().toISOString(),
         },
       }
+
+      logger.error("❌ Database health check failed", healthData.details)
+      return healthData
     }
   }
 
@@ -144,15 +189,21 @@ class Database {
 // Create and export database instance
 export const db = new Database()
 
+// Export connection function for app.ts
+export const connectDatabase = async (): Promise<void> => {
+  // Database connection is initialized in constructor
+  logger.info("Database connection initialized")
+}
+
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  console.log("🛑 Received SIGINT, closing database connection...")
+  logger.info("🛑 Received SIGINT, closing database connection...")
   await db.close()
   process.exit(0)
 })
 
 process.on("SIGTERM", async () => {
-  console.log("🛑 Received SIGTERM, closing database connection...")
+  logger.info("🛑 Received SIGTERM, closing database connection...")
   await db.close()
   process.exit(0)
 })

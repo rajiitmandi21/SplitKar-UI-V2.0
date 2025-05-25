@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { TestTube } from "lucide-react"
+import { TestTube, CheckCircle } from "lucide-react"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,15 +31,25 @@ export default function RootLayout({
             {children}
             <Toaster />
             {process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND === "true" && (
-              <div className="fixed bottom-4 right-4 z-50">
+              <div className="fixed bottom-4 right-4 z-50 space-y-2">
                 <Link href="/demo">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200 shadow-lg"
+                    className="bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200 shadow-lg block w-full"
                   >
                     <TestTube className="w-4 h-4 mr-2" />
                     Demo Mode
+                  </Button>
+                </Link>
+                <Link href="/verify-deployment">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-green-100 border-green-300 text-green-700 hover:bg-green-200 shadow-lg block w-full"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Verify
                   </Button>
                 </Link>
               </div>
