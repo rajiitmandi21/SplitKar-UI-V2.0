@@ -1,23 +1,121 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Users, Receipt, UserPlus, TestTube, LogIn } from "lucide-react"
+import { User, Users, Receipt, UserPlus, TestTube, LogIn, Loader2 } from "lucide-react"
 import Link from "next/link"
 
-// Import mock data
-import mockUsers from "@/data/mock-users.json"
-import mockGroups from "@/data/mock-groups.json"
-import mockExpenses from "@/data/mock-expenses.json"
-import mockFriends from "@/data/mock-friends.json"
+// Define types for mock data
+interface MockUser {
+  id: string
+  name: string
+  email: string
+  balance: number
+  upiId: string
+  role: string
+  isVerified: boolean
+}
+
+interface MockGroup {
+  id: string
+  name: string
+  description: string
+  memberIds: string[]
+  totalExpenses: number
+  createdAt: string
+  category: string
+}
+
+interface MockExpense {
+  id: string
+  description: string
+  paidBy: string
+  amount: number
+  category: string
+  splitType: string
+  date: string
+  participants: string[]
+}
+
+interface MockFriend {
+  id: string
+  friendId: string
+  status: string
+  createdAt: string
+}
 
 export default function DemoPage() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [mockData, setMockData] = useState<{
+    users: MockUser[]
+    groups: MockGroup[]
+    expenses: MockExpense[]
+    friends: MockFriend[]
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_DATA_FOR_FRONTEND === "true"
+
+  useEffect(() => {
+    // Load mock data dynamically to avoid SSR issues
+    const loadMockData = async () => {
+      try {
+        const [usersRes, groupsRes, expensesRes, friendsRes] = await Promise.all([
+          import("@/data/mock-users.json"),
+          import("@/data/mock-groups.json"),
+          import("@/data/mock-expenses.json"),
+          import("@/data/mock-friends.json"),
+        ])
+
+        setMockData({
+          users: usersRes.default || [],
+          groups: groupsRes.default || [],
+          expenses: expensesRes.default || [],
+          friends: friendsRes.default || [],
+        })
+      } catch (error) {
+        console.error("Failed to load mock data:", error)
+        // Set empty arrays as fallback
+        setMockData({
+          users: [],
+          groups: [],
+          expenses: [],
+          friends: [],
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadMockData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading demo data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!mockData) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">Failed to load demo data</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const { users, groups, expenses, friends } = mockData
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -34,15 +132,15 @@ export default function DemoPage() {
 
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="groups">Groups</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="friends">Friends</TabsTrigger>
+          <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
+          <TabsTrigger value="groups">Groups ({groups.length})</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses ({expenses.length})</TabsTrigger>
+          <TabsTrigger value="friends">Friends ({friends.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {mockUsers.map((user) => (
+            {users.map((user) => (
               <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -92,7 +190,7 @@ export default function DemoPage() {
 
         <TabsContent value="groups" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {mockGroups.map((group) => (
+            {groups.map((group) => (
               <Card key={group.id}>
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -133,7 +231,7 @@ export default function DemoPage() {
 
         <TabsContent value="expenses" className="space-y-4">
           <div className="grid gap-4">
-            {mockExpenses.map((expense) => (
+            {expenses.map((expense) => (
               <Card key={expense.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -144,7 +242,7 @@ export default function DemoPage() {
                       <div>
                         <CardTitle className="text-lg">{expense.description}</CardTitle>
                         <CardDescription>
-                          Paid by {mockUsers.find((u) => u.id === expense.paidBy)?.name}
+                          Paid by {users.find((u) => u.id === expense.paidBy)?.name || "Unknown"}
                         </CardDescription>
                       </div>
                     </div>
@@ -179,7 +277,7 @@ export default function DemoPage() {
 
         <TabsContent value="friends" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {mockFriends.map((friendship) => (
+            {friends.map((friendship) => (
               <Card key={friendship.id}>
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -188,9 +286,11 @@ export default function DemoPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {mockUsers.find((u) => u.id === friendship.friendId)?.name}
+                        {users.find((u) => u.id === friendship.friendId)?.name || "Unknown"}
                       </CardTitle>
-                      <CardDescription>{mockUsers.find((u) => u.id === friendship.friendId)?.email}</CardDescription>
+                      <CardDescription>
+                        {users.find((u) => u.id === friendship.friendId)?.email || "No email"}
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
