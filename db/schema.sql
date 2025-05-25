@@ -223,6 +223,9 @@ CREATE TABLE IF NOT EXISTS upi_payment_links (
     expires_at TIMESTAMP WITH TIME ZONE,
     click_count INTEGER DEFAULT 0,
     last_accessed_at TIMESTAMP WITH TIME ZONE,
+    allow_custom_amount BOOLEAN DEFAULT false,
+    min_amount DECIMAL(12, 2),
+    max_amount DECIMAL(12, 2),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

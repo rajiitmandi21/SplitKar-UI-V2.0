@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
 import { 
   Smartphone, 
   Copy, 
@@ -36,6 +37,9 @@ interface UPIPaymentLink {
   is_active: boolean
   expires_at?: string
   created_at: string
+  allow_custom_amount?: boolean
+  min_amount?: number
+  max_amount?: number
   shortUrl: string
   upiUrl: string
 }
@@ -61,6 +65,8 @@ export default function ShortCodeRedirectPage() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
+  const [customAmount, setCustomAmount] = useState("")
+  const [amountError, setAmountError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!shortCode) return
@@ -111,8 +117,37 @@ export default function ShortCodeRedirectPage() {
     fetchLinkData()
   }, [shortCode])
 
+  const validateCustomAmount = (amount: string): boolean => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      setAmountError("Please enter a valid amount")
+      return false
+    }
+
+    const numAmount = Number(amount)
+    
+    if (upiLink?.min_amount && numAmount < upiLink.min_amount) {
+      setAmountError(`Amount must be at least ₹${upiLink.min_amount}`)
+      return false
+    }
+    
+    if (upiLink?.max_amount && numAmount > upiLink.max_amount) {
+      setAmountError(`Amount cannot exceed ₹${upiLink.max_amount}`)
+      return false
+    }
+
+    setAmountError(null)
+    return true
+  }
+
   const handleUPIPayment = () => {
     if (!upiLink) return
+    
+    // Validate custom amount if required
+    if (upiLink.allow_custom_amount) {
+      if (!validateCustomAmount(customAmount)) {
+        return
+      }
+    }
     
     // Track click
     fetch(`/api/upi/analytics`, {
@@ -125,8 +160,22 @@ export default function ShortCodeRedirectPage() {
       })
     }).catch(console.error)
 
+    // Generate UPI URL with custom amount if needed
+    const finalAmount = upiLink.allow_custom_amount ? Number(customAmount) : upiLink.amount
+    let upiUrl = `upi://pay?pa=${encodeURIComponent(upiLink.upi_id)}&pn=${encodeURIComponent(upiLink.payee_name)}`
+    
+    if (finalAmount && finalAmount > 0) {
+      upiUrl += `&am=${finalAmount}`
+    }
+    
+    upiUrl += `&cu=${upiLink.currency}`
+    
+    if (upiLink.message) {
+      upiUrl += `&tn=${encodeURIComponent(upiLink.message)}`
+    }
+
     // Open UPI app
-    window.location.href = upiLink.upiUrl
+    window.location.href = upiUrl
   }
 
   const copyToClipboard = async (text: string) => {
@@ -247,7 +296,48 @@ export default function ShortCodeRedirectPage() {
                 <span className="font-mono text-sm">{upiLink.upi_id}</span>
               </div>
 
-              {upiLink.amount && (
+              {/* Amount Section */}
+              {upiLink.allow_custom_amount ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Amount:</span>
+                    <span className="text-sm text-blue-600 font-medium">Custom Amount</span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Enter amount"
+                        value={customAmount}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setCustomAmount(e.target.value)
+                          setAmountError(null)
+                        }}
+                        className={`pl-10 text-lg font-semibold ${amountError ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    
+                    {amountError && (
+                      <p className="text-sm text-red-600">{amountError}</p>
+                    )}
+                    
+                    {(upiLink.min_amount || upiLink.max_amount) && (
+                      <div className="text-xs text-gray-500">
+                        {upiLink.min_amount && upiLink.max_amount ? (
+                          `Amount should be between ₹${upiLink.min_amount} - ₹${upiLink.max_amount}`
+                        ) : upiLink.min_amount ? (
+                          `Minimum amount: ₹${upiLink.min_amount}`
+                        ) : (
+                          `Maximum amount: ₹${upiLink.max_amount}`
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : upiLink.amount ? (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Amount:</span>
                   <div className="flex items-center gap-1">
@@ -257,6 +347,11 @@ export default function ShortCodeRedirectPage() {
                     </span>
                     <span className="text-sm text-gray-500">{upiLink.currency}</span>
                   </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Amount:</span>
+                  <span className="text-sm text-blue-600 font-medium">To be entered by payer</span>
                 </div>
               )}
 

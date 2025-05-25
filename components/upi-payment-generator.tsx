@@ -68,7 +68,10 @@ export default function UPIPaymentGenerator({
     message: defaultData?.message || '',
     transactionNote: '',
     hasExpiry: false,
-    expiryDays: 7
+    expiryDays: 7,
+    allowCustomAmount: false,
+    minAmount: '',
+    maxAmount: ''
   })
 
   const [generatedLink, setGeneratedLink] = useState<UPIPaymentLink | null>(null)
@@ -251,38 +254,103 @@ export default function UPIPaymentGenerator({
             )}
           </div>
 
-          {/* Amount */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="amount">Amount (Optional)</Label>
-              <div className="relative">
-                <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange('amount', e.target.value)}
-                  className={`pl-10 ${validationErrors.amount ? 'border-red-500' : ''}`}
+          {/* Amount Configuration */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="amount">Amount</Label>
+                <div className="relative">
+                  <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    placeholder={formData.allowCustomAmount ? "Leave empty for custom amount" : "0.00"}
+                    value={formData.amount}
+                    onChange={(e) => handleInputChange('amount', e.target.value)}
+                    className={`pl-10 ${validationErrors.amount ? 'border-red-500' : ''}`}
+                    disabled={formData.allowCustomAmount}
+                  />
+                </div>
+                {validationErrors.amount && (
+                  <p className="text-sm text-red-600">{validationErrors.amount}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Select value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Custom Amount Option */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Allow Custom Amount</Label>
+                  <p className="text-sm text-gray-500">Let payer enter their own amount</p>
+                </div>
+                <Switch
+                  checked={formData.allowCustomAmount}
+                  onCheckedChange={(checked) => {
+                    handleInputChange('allowCustomAmount', checked)
+                    if (checked) {
+                      handleInputChange('amount', '')
+                    }
+                  }}
                 />
               </div>
-              {validationErrors.amount && (
-                <p className="text-sm text-red-600">{validationErrors.amount}</p>
+
+              {formData.allowCustomAmount && (
+                <div className="grid grid-cols-2 gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="space-y-2">
+                    <Label htmlFor="minAmount">Minimum Amount (Optional)</Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="minAmount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={formData.minAmount}
+                        onChange={(e) => handleInputChange('minAmount', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxAmount">Maximum Amount (Optional)</Label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="maxAmount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={formData.maxAmount}
+                        onChange={(e) => handleInputChange('maxAmount', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="col-span-2">
+                    <Alert>
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Payers will be able to enter any amount{formData.minAmount && ` above ₹${formData.minAmount}`}{formData.maxAmount && ` up to ₹${formData.maxAmount}`}.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                </div>
               )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Select value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INR">INR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 

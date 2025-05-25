@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       params
     )
 
-    const links = result.rows.map(link => ({
+    const links = result.rows.map((link: any) => ({
       ...link,
       shortUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/${link.short_code}`,
       upiUrl: generateUPIUrl({
@@ -113,7 +113,10 @@ export async function POST(request: NextRequest) {
       createdBy,
       expenseId,
       groupId,
-      expiresAt
+      expiresAt,
+      allowCustomAmount = false,
+      minAmount,
+      maxAmount
     } = body
 
     // Validation
@@ -158,12 +161,14 @@ export async function POST(request: NextRequest) {
       const linkResult = await client.query(
         `INSERT INTO upi_payment_links (
           short_code, upi_id, payee_name, amount, currency, message, 
-          transaction_note, created_by, expense_id, group_id, expires_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+          transaction_note, created_by, expense_id, group_id, expires_at,
+          allow_custom_amount, min_amount, max_amount
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
         RETURNING *`,
         [
           shortCode, upiId, payeeName, amount, currency, message,
-          transactionNote, createdBy, expenseId, groupId, expiresAt
+          transactionNote, createdBy, expenseId, groupId, expiresAt,
+          allowCustomAmount, minAmount, maxAmount
         ]
       )
 

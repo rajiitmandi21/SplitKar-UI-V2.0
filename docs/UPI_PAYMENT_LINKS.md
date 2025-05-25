@@ -16,6 +16,8 @@ SplitKar now includes a powerful UPI payment link generator with custom domain U
 - **Standard UPI Format**: Compatible with all UPI apps (GPay, PhonePe, Paytm, BHIM)
 - **Template**: `upi://pay?pa=<UPI_ID>&pn=<PAYEE_NAME>&am=<AMOUNT>&cu=INR&tn=<MESSAGE>`
 - **Flexible Amounts**: Support for fixed amounts or open-ended payments
+- **Custom Amount Entry**: Allow payers to enter their own amount with optional min/max limits
+- **Real-time Validation**: Amount validation on payment page with user-friendly error messages
 - **Custom Messages**: Context-aware transaction notes
 
 ### 📊 Analytics & Tracking
@@ -30,6 +32,15 @@ SplitKar now includes a powerful UPI payment link generator with custom domain U
 - **Deactivation**: Manual link deactivation for security
 - **Privacy Protection**: UPI IDs are masked in logs
 - **Secure Storage**: Encrypted database storage
+
+### 📧 Email Integration & Notifications
+- **Payment Reminders**: Automated email reminders with embedded UPI payment links
+- **Nudge System**: Gentle nudges for overdue payments with urgency indicators
+- **Click Tracking**: Track when recipients click on payment links in emails
+- **Beautiful Templates**: Professional HTML email templates with expense details
+- **Personalization**: Customized messages based on expense and group context
+- **Multiple Templates**: Different templates for reminders, nudges, and urgent notices
+- **Bulk Notifications**: Send reminders to multiple participants at once
 
 ## API Endpoints
 
@@ -48,7 +59,10 @@ Content-Type: application/json
   "createdBy": "user-uuid",
   "expenseId": "expense-uuid",
   "groupId": "group-uuid",
-  "expiresAt": "2024-12-31T23:59:59Z"
+  "expiresAt": "2024-12-31T23:59:59Z",
+  "allowCustomAmount": false,
+  "minAmount": 100.00,
+  "maxAmount": 1000.00
 }
 ```
 
@@ -95,6 +109,39 @@ Content-Type: application/json
 }
 ```
 
+### Send Email Notification
+```http
+POST /api/notifications/email
+Content-Type: application/json
+
+{
+  "type": "reminder",
+  "recipientEmail": "user@example.com",
+  "recipientName": "John Doe",
+  "senderName": "Jane Smith",
+  "amount": 500.00,
+  "currency": "INR",
+  "expenseTitle": "Team Dinner",
+  "groupName": "Office Team",
+  "paymentLink": "https://yourdomain.com/abc123xy",
+  "dueDate": "2024-02-01",
+  "daysSinceReminder": 3
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "reminder email sent successfully",
+  "data": {
+    "recipientEmail": "user@example.com",
+    "subject": "💰 Payment Reminder: ₹500 for Team Dinner",
+    "paymentLink": "https://yourdomain.com/abc123xy"
+  }
+}
+```
+
 ## Database Schema
 
 ### UPI Payment Links Table
@@ -115,6 +162,9 @@ CREATE TABLE upi_payment_links (
     expires_at TIMESTAMP WITH TIME ZONE,
     click_count INTEGER DEFAULT 0,
     last_accessed_at TIMESTAMP WITH TIME ZONE,
+    allow_custom_amount BOOLEAN DEFAULT false,
+    min_amount DECIMAL(12, 2),
+    max_amount DECIMAL(12, 2),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
