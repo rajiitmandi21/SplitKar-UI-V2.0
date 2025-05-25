@@ -53,6 +53,7 @@
     "fs": "latest",
     "helmet": "latest",
     "input-otp": "1.4.1",
+    "ioredis": "latest",
     "jsonwebtoken": "latest",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",

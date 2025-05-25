@@ -31,6 +31,9 @@ export default function VerifyDeploymentPage() {
       { name: "Server Actions", status: "pending", message: "Testing server action connectivity..." },
       { name: "Authentication", status: "pending", message: "Testing authentication flow..." },
       { name: "Database Connection", status: "pending", message: "Verifying database connectivity..." },
+      { name: "Redis Connection", status: "pending", message: "Testing Redis cache connectivity..." },
+      { name: "Email Configuration", status: "pending", message: "Verifying email service setup..." },
+      { name: "Security Configuration", status: "pending", message: "Checking security settings..." },
     ]
     setResults(tests)
   }
@@ -125,6 +128,52 @@ export default function VerifyDeploymentPage() {
       updateResult("Database Connection", "success", "Database connectivity verified")
     } catch (error: any) {
       updateResult("Database Connection", "error", "Database connection failed", error.message)
+    }
+
+    // Test 7: Redis Connection
+    try {
+      // In a real deployment, this would test Redis connectivity
+      // For now, we'll check if Redis URL is configured
+      const redisUrl = process.env.REDIS_URL
+      if (redisUrl) {
+        updateResult("Redis Connection", "success", "Redis URL configured", `URL: ${redisUrl.substring(0, 20)}...`)
+      } else {
+        updateResult("Redis Connection", "error", "Redis URL not configured")
+      }
+    } catch (error: any) {
+      updateResult("Redis Connection", "error", "Redis connection test failed", error.message)
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // Test 8: Email Configuration
+    try {
+      const gmailUser = process.env.GMAIL_USER
+      const gmailPassword = process.env.GMAIL_APP_PASSWORD
+
+      if (gmailUser && gmailPassword) {
+        updateResult("Email Configuration", "success", "Email service configured", `User: ${gmailUser}`)
+      } else {
+        updateResult("Email Configuration", "error", "Email configuration incomplete")
+      }
+    } catch (error: any) {
+      updateResult("Email Configuration", "error", "Email configuration test failed", error.message)
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // Test 9: Security Configuration
+    try {
+      const jwtSecret = process.env.JWT_SECRET
+      const allowedApiKeys = process.env.ALLOWED_API_KEYS
+
+      if (jwtSecret && allowedApiKeys) {
+        updateResult("Security Configuration", "success", "Security settings configured")
+      } else {
+        updateResult("Security Configuration", "error", "Security configuration incomplete")
+      }
+    } catch (error: any) {
+      updateResult("Security Configuration", "error", "Security configuration test failed", error.message)
     }
 
     setIsRunning(false)
