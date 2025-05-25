@@ -1,8 +1,23 @@
+# =============================================================================
+# SplitKar Project .gitignore
+# =============================================================================
+# This file ignores build artifacts, dependencies, and temporary files
+# but KEEPS important files like package-lock.json for consistent builds
+# =============================================================================
+
 # Dependencies
 node_modules/
 */node_modules/
 frontend/node_modules/
 backend/node_modules/
+
+# Lock files - KEEP these for consistent builds
+# package-lock.json (keep - ensures exact dependency versions)
+# yarn.lock (keep if using Yarn)
+# pnpm-lock.yaml (keep if using pnpm)
+
+# But ignore these lock files that can be regenerated
+.pnpm-debug.log*
 
 # Production builds
 .next/
