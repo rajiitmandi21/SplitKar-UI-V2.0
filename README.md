@@ -235,3 +235,14 @@ frontend/
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+---
+
+## Author
+
+Built by **Raj Kumar** — Context Engineer & Senior AI Developer.
+
+- Portfolio: https://rajsharma.space
+- Visual portfolio: https://new.rajsharma.space
+- GitHub: https://github.com/rajiitmandi21
+- SmaranQ: https://smaranq.com
